@@ -369,6 +369,30 @@ header {
     color: #fff;
 }
 
+/* Events Overlay */
+.events-overlay { position: fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; }
+.events-overlay.hidden { display:none; }
+.events-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.75); }
+.events-panel { position:relative; width:1100px; max-width:95%; max-height:90vh; overflow:auto; background:#141414; border-radius:8px; box-shadow:0 30px 80px rgba(0,0,0,0.7); }
+.events-panel-header { position:sticky; top:0; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#1b1b1b; border-bottom:1px solid #2a2a2a; z-index:1; }
+.events-close { background:transparent; border:none; color:#fff; font-size:1.2rem; cursor:pointer; }
+.events-feed-full { padding:16px; display:flex; flex-direction:column; gap:16px; }
+
+/* Event post card (no arrows nor X inside) */
+.event-post { background:#141414; border:1px solid #2a2a2a; border-radius:6px; overflow:hidden; }
+.event-post .ep-header { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#1b1b1b; border-bottom:1px solid #2a2a2a; }
+.ep-meta { font-size:0.75rem; color:#bbb; }
+.ep-title { font-weight:700; color:#fff; }
+.ep-icons { display:flex; align-items:center; gap:8px; }
+.ep-icons .icon { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; background:#303030; color:#fff; border-radius:4px; cursor:pointer; }
+.ep-image { width:100%; height:200px; object-fit:cover; display:block; }
+.ep-summary { padding:10px 12px; color:#ccc; font-size:0.9rem; }
+
+@media (max-width:768px) {
+    .events-panel { width:96%; }
+    .ep-image { height:140px; }
+}
+
 /* Footer */
 footer {
     background-color: #222;
@@ -405,23 +429,110 @@ footer {
     font-size: 0.9rem;
 }
 
+/* Company modal styles */
+.company-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+}
+.company-modal.hidden { display: none; }
+.company-modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
+.company-modal-content {
+    position: relative;
+    width: 1100px;
+    max-width: 95%;
+    background: #141414;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+}
+.company-modal-close { position: absolute; right: 12px; top: 12px; background: transparent; border: none; color: #fff; font-size: 1.2rem; z-index: 10; cursor: pointer; }
+.company-banner { background: #111; padding: 18px 24px; border-bottom: 1px solid #2b2b2b; }
+.company-banner-inner { display:flex; align-items:center; justify-content:center; gap:24px; }
+.company-logo-wrap img { width: 180px; height: auto; display:block; }
+.company-stars i { color: #ffcc00; font-size: 1.6rem; margin: 0 4px; }
+.company-body { display: flex; gap: 20px; padding: 20px; }
+.company-left { width: 320px; border-right: 1px solid #333; padding-right: 20px; }
+.company-left .info-row { margin-bottom: 14px; color: #ddd; display:flex; align-items:center; gap:8px; }
+.company-left .flag { width: 28px; height: 18px; object-fit:cover; border-radius:3px; margin-left:6px; }
+.company-right { flex: 1; color: #ccc; }
+.cm-description { line-height:1.5; color:#bbb; }
+.company-featured { padding: 18px 20px 28px 20px; border-top: 1px solid #222; }
+.featured-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; color:#fff; }
+.featured-wrapper { display:flex; align-items:center; gap:10px; }
+.featured-cards { display:flex; gap:12px; overflow-x:auto; padding:6px 0; }
+.fcard { min-width:140px; background:#1c1c1c; border-radius:8px; overflow:hidden; }
+.fcard img { width:100%; display:block; }
+.ftitle { background:#b30000; color:#fff; text-align:center; padding:6px; font-weight:700; font-size:0.85rem; }
+.fnav { background:transparent; border:none; color:#ff0000; font-size:1.4rem; cursor:pointer; }
+
 /* Responsive */
 @media (max-width: 768px) {
-    .lists-section {
-        flex-direction: column;
-    }
-    
-    .vertical-divider {
-        display: none;
-    }
-    
-    .footer-content {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    
-    .search-input-wrapper {
-        width: 100%;
-    }
+    .lists-section { flex-direction: column; }
+    .vertical-divider { display: none; }
+    .footer-content { flex-direction: column; gap: 15px; text-align: center; }
+    .search-input-wrapper { width: 100%; }
+    .company-body { flex-direction: column; }
+    .company-left { width: 100%; border-right: none; border-bottom:1px solid #2b2b2b; padding-bottom:12px; }
+    .company-banner-inner { flex-direction: column; gap:10px; }
+    .company-logo-wrap img { width: 140px; }
+    .company-modal-content { width: 96%; }
+}
+
+/* Game detail styles */
+.game-detail { border: 2px solid transparent; padding: 12px; }
+.game-hero img { width: 100%; height: 420px; object-fit: cover; border-radius: 4px; }
+.game-meta { display:flex; gap:20px; margin-top: 12px; align-items:flex-start; }
+.game-meta .left { flex:1; }
+.game-title { font-size: 1.6rem; margin-bottom: 8px; }
+.meta-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; color:#ccc; }
+.game-meta .right { width:260px; text-align:center; }
+.poster img { width:100%; border-radius:6px; }
+.badges { display:flex; gap:8px; justify-content:center; margin-top:8px; }
+.rating { background:#00b374; color:#fff; padding:6px 10px; border-radius:20px; font-weight:700; }
+.classification { background:#d40000; color:#fff; padding:6px 10px; border-radius:6px; font-weight:700; }
+.media-row { display:flex; gap:12px; margin-top:18px; }
+.main-video { flex:2; background:#0f0f0f; height:240px; display:flex; align-items:center; justify-content:center; }
+.video-fake { font-size:48px; color:#fff; background:rgba(0,0,0,0.4); padding:12px 16px; border-radius:50%; }
+.thumbs { flex:1; display:flex; gap:8px; align-items:center; }
+.thumbs img { width:80px; height:60px; object-fit:cover; border-radius:4px; }
+.game-body { display:flex; gap:20px; margin-top:18px; }
+.col-left { width:360px; }
+.col-right { flex:1; color:#ccc; }
+.tag { display:inline-block; background:#222; color:#fff; padding:6px 10px; border-radius:12px; margin:6px 6px 6px 0; }
+.tag.platform { background:#111; border:1px solid #444; }
+
+@media (max-width: 768px) {
+    .game-hero img { height: 200px; }
+    .game-meta { flex-direction: column; }
+    .media-row { flex-direction: column; }
+    .thumbs { justify-content:flex-start; }
+    .col-left { width:100%; }
+    .game-body { flex-direction:column; }
+}
+
+/* Top 100 page */
+.top100-hero img { width:100%; height:420px; object-fit:cover; display:block; }
+.top100-intro { background:#1f1f1f; border:1px solid #2a2a2a; padding:16px; border-radius:6px; margin-top:12px; }
+.top100-intro h2 { margin-bottom:10px; }
+.top100-filters { background:#151515; border:1px solid #2a2a2a; padding:14px; border-radius:6px; margin:16px 0; display:flex; flex-wrap:wrap; gap:14px; }
+.filter-group { display:flex; flex-direction:column; gap:6px; }
+.filter-group label { color:#ccc; font-size:0.85rem; }
+.filter-group select { background:#202020; color:#fff; border:1px solid #333; border-radius:4px; padding:6px 10px; }
+.top100-list { display:flex; flex-direction:column; gap:14px; }
+.top-item { display:grid; grid-template-columns: 40px 64px 80px 1fr; gap:12px; align-items:center; background:#141414; border:1px solid #2a2a2a; padding:10px; border-radius:6px; }
+.top-item .rank { color:#fff; font-weight:700; }
+.score-badge { width:44px; height:44px; border-radius:22px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.thumb img { width:80px; height:80px; object-fit:cover; border-radius:4px; }
+.info .name { font-size:1rem; margin-bottom:6px; }
+.info .desc { color:#bbb; font-size:0.85rem; line-height:1.4; }
+
+@media (max-width:768px){
+    .top100-hero img { height:200px; }
+    .top-item { grid-template-columns: 30px 44px 60px 1fr; }
+    .score-badge { width:36px; height:36px; border-radius:18px; }
+    .thumb img { width:60px; height:60px; }
 }

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Top 100 - Gokken</title>
+  <link rel="stylesheet" href="../css/example.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <div class="logo"><img src="https://placehold.co/100x30/transparent/white?text=Gokken" alt="Gokken"></div>
+      <div class="search-bar"><div class="search-input-wrapper"><input placeholder="Buscar"><i class="fas fa-search"></i></div></div>
+      <div class="menu-icon"><i class="fas fa-bars"></i></div>
+    </div>
+  </header>
+
+  <section class="top100-hero">
+    <img src="https://placehold.co/1600x420/222/fff?text=Top+100+Hero" alt="Top 100">
+  </section>
+
+  <main class="section-padding">
+    <section class="top100-intro">
+      <h2>Ranking de los mejores videojuegos</h2>
+      <p>Aquí encontrarás los mejores juegos de todos los tiempos, valorados según la opinión de los usuarios, de metacritic o de nuestros analistas por orden de puntuación.</p>
+      <p>Este Top de videojuegos está constantemente actualizado cada 24h. Se hace haciendo una nota media entre la nota de nuestras análisis, la de Metacritic y la de los usuarios.</p>
+    </section>
+
+    <section class="top100-filters">
+      <div class="filter-group">
+        <label>Plataformas</label>
+        <select id="fPlatform" disabled>
+          <option value="all">Todas</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Género</label>
+        <select id="fGenre" disabled>
+          <option value="all">Todos</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Nota media</label>
+        <select id="fRating">
+          <option value="all">Todas</option>
+          <option value="90">≥ 9.0</option>
+          <option value="80">≥ 8.0</option>
+          <option value="70">≥ 7.0</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Fecha de lanzamiento</label>
+        <select id="fRelease" disabled>
+          <option value="all">Todas</option>
+        </select>
+      </div>
+    </section>
+
+    <section id="top100List" class="top100-list"></section>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <div class="contact-social"><span>Contactos</span><div class="social-icons"><i class="fab fa-discord"></i></div></div>
+      <div class="footer-info"><span>Acerca de: xxxxx</span></div>
+    </div>
+  </footer>
+
+  <script src="../js/top100.js"></script>
+</body>
+</html>

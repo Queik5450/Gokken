@@ -41,9 +41,13 @@ function renderGames(games)
             ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg` 
             : 'https://placehold.co/200x280/333/white?text=No+Image';
 
+        // Link to game detail page; if `game.id` is present use it, otherwise fallback to name-based id
+        const gid = game.id !== undefined ? game.id : encodeURIComponent(game.name.replace(/\s+/g,'-').toLowerCase());
         card.innerHTML = `
-            <img src="${imageUrl}" alt="${game.name}">
-            <div class="game-title">${game.name}</div>
+            <a class="game-link" href="game.html?id=${gid}">
+                <img src="${imageUrl}" alt="${game.name}">
+                <div class="game-title">${game.name}</div>
+            </a>
         `;
         
         container.appendChild(card);

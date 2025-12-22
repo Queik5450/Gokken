@@ -25,6 +25,7 @@ async function getAccessToken() {
 app.get('/api/top-games', async (req, res) => {
     try {
         const token = await getAccessToken();
+        const limit = Number(req.query.limit || 10);
         
         const response = await axios({
             url: 'https://api.igdb.com/v4/games',
@@ -36,10 +37,10 @@ app.get('/api/top-games', async (req, res) => {
             },
             // The query you wrote goes here
             data: `
-                fields name, cover.image_id, rating;
+                fields name, cover.image_id, rating, summary;
                 sort rating desc;
                 where rating != null & cover != null & rating_count > 100;
-                limit 10;
+                limit ${Math.min(Math.max(limit,1),100)};
             `
         });
 
