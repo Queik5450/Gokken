@@ -1,27 +1,41 @@
+function apiBase(){
+    const hinted = window.__API_BASE__;
+    if (hinted) return hinted.replace(/\/$/,'');
+    const { protocol, hostname } = window.location;
+    const host = hostname || 'localhost';
+    const port = 8080; // default backend port
+    return `${protocol.includes('http')? 'http' : 'http'}://${host || 'localhost'}:${port}`;
+}
+
+function sampleGames(){
+    return [
+        { name: 'The Witcher 3: Wild Hunt', cover: { image_id: 'co1r16' }, id: 1942 },
+        { name: 'Red Dead Redemption 2', cover: { image_id: 'co1l7n' }, id: 1877 },
+        { name: 'God of War', cover: { image_id: 'co1tmu' }, id: 11133 },
+        { name: 'Hades', cover: { image_id: 'co1wyy' }, id: 134225 },
+        { name: 'Hollow Knight', cover: { image_id: 'co1qky' }, id: 19700 }
+    ];
+}
+
 async function getTopGames() 
 {
-    const url = 'http://localhost:8080/api/top-games';
+    const url = `${apiBase()}/api/top-games?limit=10`;
 
     try
     {
         const response = await fetch(url);
-        
         if (!response.ok)
         {
             throw new Error(`Server Error: ${response.status}`);
         }
-
         const games = await response.json();
         renderGames(games);
     }
     catch (error)
     {
         console.error('Error fetching games:', error);
-        const container = document.querySelector('.game-cards-container');
-        if (container)
-        {
-            container.innerHTML = '<p style="color: white; text-align: center;">Error loading games. Make sure the server is running.</p>';
-        }
+        // Fallback: mostrar ejemplos para evitar la sección vacía
+        renderGames(sampleGames());
     }
 }
 
