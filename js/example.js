@@ -1,3 +1,88 @@
+function apiBase(){
+    const hinted = window.__API_BASE__;
+    if (hinted) return hinted.replace(/\/$/,'');
+    const { protocol, hostname } = window.location;
+    const host = hostname || 'localhost';
+    const port = 8080;
+    return `${protocol.includes('http')? 'http' : 'http'}://${host}:${port}`;
+}
+
+function heroImage(game){
+    const shot = game.screenshots && game.screenshots[0] ? game.screenshots[0].image_id : '';
+    const art = game.artworks && game.artworks[0] ? game.artworks[0].image_id : '';
+    const cover = game.cover ? game.cover.image_id : '';
+    const id = shot || art || cover;
+    const size = shot || art ? 't_screenshot_big' : 't_cover_big';
+    return id ? `https://images.igdb.com/igdb/image/upload/${size}/${id}.jpg` : 'https://placehold.co/1920x600/111/fff?text=Gokken+Hero';
+}
+
+async function loadHeroSlider(){
+    const hero = document.querySelector('.hero');
+    if(!hero) return;
+
+    let games = [];
+    try{
+        const res = await fetch(`${apiBase()}/api/top-games?limit=5&order=new`);
+        if(!res.ok) throw new Error(res.statusText);
+        games = await res.json();
+    }catch(e){
+        console.error('Hero fetch error', e);
+        games = [
+            { name:'Star Wars Jedi: Survivor', cover:{ image_id:'co6f2e' } },
+            { name:'Baldur\'s Gate 3', cover:{ image_id:'co6n3j' } },
+            { name:'Elden Ring', cover:{ image_id:'co6ce1' } }
+        ];
+    }
+
+    if(!games.length) return;
+
+    const slides = games.map(g=>({ title: g.name, img: heroImage(g), id: g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase()) }));
+
+    hero.innerHTML = `
+        <div class="hero-track">
+            ${slides.map((s,i)=>`
+                <div class="hero-slide ${i===0?'active':''}" data-idx="${i}" data-id="${s.id}">
+                    <img src="${s.img}" alt="${s.title}" class="hero-img">
+                    <div class="hero-overlay"></div>
+                    <div class="hero-title">${s.title}</div>
+                </div>
+            `).join('')}
+        </div>
+        <button class="hero-nav prev"><i class="fas fa-chevron-left"></i></button>
+        <button class="hero-nav next"><i class="fas fa-chevron-right"></i></button>
+        <div class="hero-dots">
+            ${slides.map((_,i)=>`<span class="dot ${i===0?'active':''}" data-idx="${i}"></span>`).join('')}
+        </div>
+    `;
+
+    const slideEls = hero.querySelectorAll('.hero-slide');
+    const dotEls = hero.querySelectorAll('.hero-dots .dot');
+    const prevBtn = hero.querySelector('.hero-nav.prev');
+    const nextBtn = hero.querySelector('.hero-nav.next');
+    let current = 0;
+
+    function show(i){
+        current = (i + slideEls.length) % slideEls.length;
+        slideEls.forEach(el=>el.classList.remove('active'));
+        dotEls.forEach(el=>el.classList.remove('active'));
+        slideEls[current].classList.add('active');
+        dotEls[current].classList.add('active');
+    }
+
+    prevBtn?.addEventListener('click', ()=> show(current-1));
+    nextBtn?.addEventListener('click', ()=> show(current+1));
+    dotEls.forEach(dot=>dot.addEventListener('click', ()=> show(Number(dot.dataset.idx||0))));
+
+    // click to go to game detail
+    slideEls.forEach((el,i)=>{
+        el.style.cursor='pointer';
+        el.addEventListener('click', ()=>{
+            const gid = slides[i].id;
+            if(gid) window.location.href = `game.html?id=${gid}`;
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const top100Container = document.querySelector('.game-cards-container');
     const top100PrevBtn = document.querySelector('.carousel-wrapper .carousel-nav.left');
@@ -29,38 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const heroSlides = document.querySelectorAll('.hero-slide');
-    const heroDots = document.querySelectorAll('.hero-dots .dot');
-    let currentSlide = 0;
-
-    function updateHero(index)
-    {
-        heroDots.forEach(dot => dot.classList.remove('active'));
-        if (heroDots[index])
-        {
-            heroDots[index].classList.add('active');
-        }
-        console.log('Switched to slide', index);
-    }
-
-    const heroPrevBtn = document.querySelector('.hero-nav.prev');
-    const heroNextBtn = document.querySelector('.hero-nav.next');
-
-    if (heroPrevBtn)
-    {
-        heroPrevBtn.addEventListener('click', () => {
-            currentSlide = (currentSlide > 0) ? currentSlide - 1 : heroDots.length - 1;
-            updateHero(currentSlide);
-        });
-    }
-
-    if (heroNextBtn)
-    {
-        heroNextBtn.addEventListener('click', () => {
-            currentSlide = (currentSlide < heroDots.length - 1) ? currentSlide + 1 : 0;
-            updateHero(currentSlide);
-        });
-    }
+    loadHeroSlider();
 
     // Redirect to company page when clicking a company item
     const companyItems = document.querySelectorAll('.company-item');
