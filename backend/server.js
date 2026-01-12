@@ -55,6 +55,127 @@ app.get('/api/top-games', async (req, res) => {
     }
 });
 
+// Games released in the last N days (default 15)
+app.get('/api/games/recent', async (req, res) => {
+    try {
+        const windowDays = Number(req.query.days || 15);
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
+        const now = Math.floor(Date.now() / 1000);
+        const since = now - (windowDays * 86400);
+
+        const data = await igdbQuery('games', `
+            fields name, cover.image_id, first_release_date, release_dates.human, slug, id;
+            where first_release_date != null & first_release_date >= ${since} & first_release_date <= ${now} & cover != null;
+            sort first_release_date desc;
+            limit ${limit};
+        `);
+
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch recent games' });
+    }
+});
+
+// Games releasing in the next N days (default 15)
+app.get('/api/games/upcoming', async (req, res) => {
+    try {
+        const windowDays = Number(req.query.days || 15);
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
+        const now = Math.floor(Date.now() / 1000);
+        const until = now + (windowDays * 86400);
+
+        const data = await igdbQuery('games', `
+            fields name, cover.image_id, first_release_date, release_dates.human, slug, id;
+            where first_release_date != null & first_release_date > ${now} & first_release_date <= ${until} & cover != null;
+            sort first_release_date asc;
+            limit ${limit};
+        `);
+
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch upcoming games' });
+    }
+});
+
+// Featured companies with average rating computed from their games
+app.get('/api/companies', async (req, res) => {
+    try {
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+
+        // Grab companies that have a logo so we can render them nicely
+        const companies = await igdbQuery('companies', `
+            fields id, name, slug, logo.image_id;
+            where logo != null;
+            sort name asc;
+            limit ${limit};
+        `);
+
+        const ids = companies.map(c => c.id).filter(Boolean);
+        const ratingMap = {};
+
+        if (ids.length) {
+            // Fetch games associated with these companies to compute avg ratings
+            const games = await igdbQuery('games', `
+                fields rating, involved_companies.company;
+                where rating != null & involved_companies.company = (${ids.join(',')});
+                limit 500;
+            `);
+
+            games.forEach(game => {
+                if (!game.rating || !Array.isArray(game.involved_companies)) return;
+                game.involved_companies.forEach(ic => {
+                    const cid = ic && (ic.company || ic); // IGDB may return nested or raw ids
+                    if (!cid) return;
+                    if (!ratingMap[cid]) ratingMap[cid] = { sum: 0, count: 0 };
+                    ratingMap[cid].sum += game.rating;
+                    ratingMap[cid].count += 1;
+                });
+            });
+        }
+
+        const enriched = companies.map(c => {
+            const entry = ratingMap[c.id];
+            const avg = entry && entry.count ? entry.sum / entry.count : null;
+            return {
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                logo: c.logo,
+                avg_rating: avg,
+                rating_count: entry ? entry.count : 0
+            };
+        });
+
+        res.json(enriched);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch companies' });
+    }
+});
+
+// Gaming-related events (upcoming + recent)
+app.get('/api/events', async (req, res) => {
+    try {
+        const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
+        const now = Math.floor(Date.now() / 1000);
+        const windowPast = now - (30 * 86400); // allow events from last 30 days
+
+        const events = await igdbQuery('events', `
+            fields name, slug, start_time, end_time, event_logo.image_id, description, url;
+            where start_time != null & start_time >= ${windowPast};
+            sort start_time asc;
+            limit ${limit};
+        `);
+
+        res.json(events);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch events' });
+    }
+});
+
 // Game detail by id or name slug
 app.get('/api/game', async (req, res) => {
     try {
