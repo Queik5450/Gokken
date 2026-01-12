@@ -52,17 +52,17 @@ function makeClickableSelector(selector, titleSelector) {
 }
 
 const FALLBACK_RECENT = [
-    { name:'Lego StarWars Skywalker Saga', cover:{ image_id:'co1r7v' }, first_release_date: Math.floor(Date.now()/1000) - 3*86400 },
-    { name:'Ghost Wire Tokyo', cover:{ image_id:'co2nbi' }, first_release_date: Math.floor(Date.now()/1000) - 8*86400 },
-    { name:'SIFU', cover:{ image_id:'co25x8' }, first_release_date: Math.floor(Date.now()/1000) - 10*86400 },
-    { name:'Horizon: Forbidden West', cover:{ image_id:'co1t35' }, first_release_date: Math.floor(Date.now()/1000) - 12*86400 }
+    { name:'Game A', cover:{ image_id:'co1r7v' }, first_release_date: Math.floor(Date.now()/1000) - 3*86400 },
+    { name:'Game B', cover:{ image_id:'co2nbi' }, first_release_date: Math.floor(Date.now()/1000) - 8*86400 },
+    { name:'Game C', cover:{ image_id:'co25x8' }, first_release_date: Math.floor(Date.now()/1000) - 10*86400 },
+    { name:'Game D', cover:{ image_id:'co1t35' }, first_release_date: Math.floor(Date.now()/1000) - 12*86400 }
 ];
 
 const FALLBACK_UPCOMING = [
-    { name:'Evil Dead The Game', cover:{ image_id:'co1s1x' }, first_release_date: Math.floor(Date.now()/1000) + 4*86400 },
-    { name:'Half Life 2: Episodio 3', cover:{ image_id:'' }, first_release_date: Math.floor(Date.now()/1000) + 6*86400 },
-    { name:'Hogwarts Legacy', cover:{ image_id:'co3t5e' }, first_release_date: Math.floor(Date.now()/1000) + 9*86400 },
-    { name:'God of War :RAGNAROK', cover:{ image_id:'co2sc4' }, first_release_date: Math.floor(Date.now()/1000) + 11*86400 }
+    { name:'Upcoming Game 1', cover:{ image_id:'co1s1x' }, first_release_date: Math.floor(Date.now()/1000) + 4*86400 },
+    { name:'Upcoming Game 2', cover:{ image_id:'' }, first_release_date: Math.floor(Date.now()/1000) + 6*86400 },
+    { name:'Upcoming Game 3', cover:{ image_id:'co3t5e' }, first_release_date: Math.floor(Date.now()/1000) + 9*86400 },
+    { name:'Upcoming Game 4', cover:{ image_id:'co2sc4' }, first_release_date: Math.floor(Date.now()/1000) + 11*86400 }
 ];
 
 const FALLBACK_COMPANIES = [
@@ -75,30 +75,54 @@ const FALLBACK_COMPANIES = [
 
 const FALLBACK_EVENTS = [
     {
-        name: 'Summer Game Fest',
-        description: 'Showcase de anuncios y tráilers.',
+        name: 'Event 1',
+        description: 'Descripción genérica del evento 1.',
         start_time: Math.floor(Date.now()/1000) + 3*86400,
         event_logo: { image_id:'co2p83' },
-        url: 'https://www.summergamefest.com/'
+        url: ''
     },
     {
-        name: 'Gamescom',
-        description: 'La feria de videojuegos más grande de Europa.',
+        name: 'Event 2',
+        description: 'Descripción genérica del evento 2.',
         start_time: Math.floor(Date.now()/1000) + 20*86400,
         event_logo: { image_id:'co2p6u' },
-        url: 'https://www.gamescom.global/'
+        url: ''
     },
     {
-        name: 'The Game Awards',
-        description: 'Premiación anual de la industria.',
+        name: 'Event 3',
+        description: 'Descripción genérica del evento 3.',
         start_time: Math.floor(Date.now()/1000) + 45*86400,
         event_logo: { image_id:'co2p8d' },
-        url: 'https://thegameawards.com/'
+        url: ''
+    }
+];
+
+const FALLBACK_NEWS = [
+    {
+        title: 'Actualización destacada',
+        summary: 'Notas de parche y mejoras recientes.',
+        published_at: Math.floor(Date.now()/1000) - 2*86400,
+        pulse_image: { image_id:'co1r16' },
+        url: ''
+    },
+    {
+        title: 'Nuevo contenido',
+        summary: 'Se anunció contenido adicional y eventos en vivo.',
+        published_at: Math.floor(Date.now()/1000) - 5*86400,
+        pulse_image: { image_id:'co1l7n' },
+        url: ''
+    },
+    {
+        title: 'Comunidad',
+        summary: 'Historias destacadas de la comunidad y torneos.',
+        published_at: Math.floor(Date.now()/1000) - 8*86400,
+        pulse_image: { image_id:'co1tmu' },
+        url: ''
     }
 ];
 
 async function fetchWindow(kind, fallback){
-    const url = `${apiBase()}/api/games/${kind}?days=15&limit=30`;
+    const url = `${apiBase()}/api/games/${kind}?days=15&limit=4`;
     try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(res.statusText);
@@ -194,7 +218,7 @@ function formatDateTime(ts){
 }
 
 async function fetchEvents(){
-    const url = `${apiBase()}/api/events?limit=9`;
+    const url = `${apiBase()}/api/events?limit=15`;
     try{
         const res = await fetch(url);
         if(!res.ok) throw new Error(res.statusText);
@@ -205,28 +229,67 @@ async function fetchEvents(){
     }
 }
 
-function renderEvents(gridEl, events){
+async function fetchNews(){
+    const url = `${apiBase()}/api/news?limit=12`;
+    try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        if(!data || !data.length) throw new Error('Empty news');
+        return data;
+    }catch(e){
+        console.error('Fetch news error', e);
+        return [];
+    }
+}
+
+function newsImage(item){
+    const id = item.pulse_image ? item.pulse_image.image_id : '';
+    return id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${id}.jpg` : 'https://placehold.co/640x360/222/fff?text=Noticia';
+}
+
+function mapPost(entry){
+    const isEvent = entry.start_time !== undefined;
+    return {
+        id: entry.id || entry.slug || Math.random().toString(36).slice(2),
+        title: isEvent ? entry.name : (entry.title || 'Noticia'),
+        body: entry.description || entry.summary || '',
+        date: isEvent ? entry.start_time : (entry.published_at || entry.updated_at || null),
+        image: isEvent ? eventImage(entry) : newsImage(entry),
+        tag: isEvent ? 'Evento' : 'Noticia',
+        url: entry.url || (entry.websites && entry.websites[0] ? entry.websites[0].url : '')
+    };
+}
+
+function renderEvents(gridEl, posts){
     if(!gridEl) return;
     gridEl.innerHTML = '';
 
-    if(!events || !events.length){
-        gridEl.innerHTML = '<div class="event-placeholder">Sin eventos</div>';
+    if(!posts || !posts.length){
+        gridEl.innerHTML = '<div class="event-placeholder">Sin eventos o noticias</div>';
         return;
     }
 
-    events.forEach(ev => {
+    posts.forEach(post => {
         const card = document.createElement('div');
-        card.className = 'event-card';
+        card.className = 'news-card';
         card.innerHTML = `
-            <img src="${eventImage(ev)}" alt="${ev.name}">
-            <div class="event-content">
-                <h4>${ev.name}</h4>
-                <p>${ev.description ? ev.description.slice(0,140) + (ev.description.length>140 ? '...' : '') : ''}</p>
-                <div class="event-meta">${formatDateTime(ev.start_time)}</div>
-                <button class="read-more-btn">${ev.url ? 'Visitar' : 'Leer más'}</button>
+            <div class="news-head">
+                <span class="news-tag">${post.tag}</span>
+                <span class="news-date">${formatDateTime(post.date)}</span>
+            </div>
+            <div class="news-title">${post.title}</div>
+            <div class="news-media"><img src="${post.image}" alt="${post.title}"></div>
+            <div class="news-body">${post.body ? post.body.slice(0,180) + (post.body.length>180 ? '...' : '') : 'Sin descripción'}</div>
+            <div class="news-actions">
+                ${post.url ? `<button class="news-link" data-link>Ver más</button>` : ''}
             </div>
         `;
-        card.addEventListener('click', () => openEventDetail(ev));
+        card.addEventListener('click', () => openEventDetail(post));
+        const linkBtn = card.querySelector('[data-link]');
+        if(linkBtn && post.url){
+            linkBtn.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(post.url, '_blank'); });
+        }
         gridEl.appendChild(card);
     });
 }
@@ -268,23 +331,36 @@ async function loadHeroSlider(){
     }catch(e){
         console.error('Hero fetch error', e);
         games = [
-            { name:'Star Wars Jedi: Survivor', cover:{ image_id:'co6f2e' } },
-            { name:'Baldur\'s Gate 3', cover:{ image_id:'co6n3j' } },
-            { name:'Elden Ring', cover:{ image_id:'co6ce1' } }
+            { name:'Game 1', slug:'game-1', cover:{ image_id:'co6f2e' } },
+            { name:'Game 2', slug:'game-2', cover:{ image_id:'co6n3j' } },
+            { name:'Game 3', slug:'game-3', cover:{ image_id:'co6ce1' } }
         ];
     }
 
     if(!games.length) return;
 
-    const slides = games.map(g=>({ title: g.name, img: heroImage(g), id: g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase()) }));
+    const slides = games.map(g=>{
+        const slug = g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase());
+        const id = g.id;
+        const href = id ? `game.html?id=${id}` : `game.html?slug=${slug}`;
+        return {
+            title: g.name,
+            img: heroImage(g),
+            id,
+            slug,
+            href
+        };
+    });
 
     hero.innerHTML = `
         <div class="hero-track">
             ${slides.map((s,i)=>`
-                <div class="hero-slide ${i===0?'active':''}" data-idx="${i}" data-id="${s.id}">
-                    <img src="${s.img}" alt="${s.title}" class="hero-img">
-                    <div class="hero-overlay"></div>
-                    <div class="hero-title">${s.title}</div>
+                <div class="hero-slide ${i===0?'active':''}" data-idx="${i}" data-href="${s.href}" data-id="${s.id || ''}" data-slug="${s.slug || ''}">
+                    <a class="hero-link" href="${s.href}" aria-label="${s.title}">
+                        <img src="${s.img}" alt="${s.title}" class="hero-img">
+                        <div class="hero-overlay"></div>
+                        <div class="hero-title">${s.title}</div>
+                    </a>
                 </div>
             `).join('')}
         </div>
@@ -313,12 +389,11 @@ async function loadHeroSlider(){
     nextBtn?.addEventListener('click', ()=> show(current+1));
     dotEls.forEach(dot=>dot.addEventListener('click', ()=> show(Number(dot.dataset.idx||0))));
 
-    // click to go to game detail
-    slideEls.forEach((el,i)=>{
+    slideEls.forEach((el)=>{
         el.style.cursor='pointer';
         el.addEventListener('click', ()=>{
-            const gid = slides[i].id;
-            if(gid) window.location.href = `game.html?id=${gid}`;
+            const href = el.getAttribute('data-href');
+            if(href) window.location.href = href;
         });
     });
 }
@@ -354,7 +429,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load companies into carousel
     (async () => {
         const listEl = document.querySelector('[data-company-list]');
         if (!listEl) return;
@@ -365,7 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadHeroSlider();
     loadRecentAndUpcoming();
 
-    // Redirect to company page when clicking a company item
     const companyItems = document.querySelectorAll('.company-item');
     companyItems.forEach((el) => {
         el.style.cursor = 'pointer';
@@ -375,70 +448,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // event cards open detail overlay (handled inside renderEvents)
-    // make featured small cards clickable
     makeClickableSelector('.fcard', '.ftitle');
 
-    // Events overlay: open on 'Ver todos'
     const eventsSeeMore = document.querySelector('.events .see-more');
     const eventsOverlay = document.getElementById('eventsOverlay');
     const eventsFeedFull = document.getElementById('eventsFeedFull');
-    let eventsCache = [];
+    const moreBtn = document.querySelector('.events .scroll-indicator');
+    let postsCache = [];
+    let visibleCount = 3;
 
-    function openEventDetail(ev){
-        if(!eventsOverlay || !eventsFeedFull) return;
-        if(!ev){
-            eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
-        } else {
-            eventsFeedFull.innerHTML = `
-                <div class="event-detail">
-                    <div class="detail-meta">${formatDateTime(ev.start_time)}</div>
-                    <h3>${ev.name}</h3>
-                    <img class="detail-hero" src="${eventImage(ev)}" alt="${ev.name}">
-                    <div class="detail-body">${ev.description || 'Sin descripción'}</div>
-                    <div class="detail-actions">
-                        ${ev.url ? `<button class="read-more-btn" data-event-link>Visitar enlace</button>` : ''}
-                    </div>
-                </div>
-            `;
-            const btn = eventsFeedFull.querySelector('[data-event-link]');
-            if(btn && ev.url){
-                btn.addEventListener('click', (e)=>{
-                    e.stopPropagation();
-                    window.open(ev.url, '_blank');
-                });
-            }
+    function renderDetail(post){
+        const body = post.body || 'Sin descripción';
+        const linkBtn = post.url ? `<button class="read-more-btn" data-event-link>Visitar enlace</button>` : '';
+        eventsFeedFull.innerHTML = `
+            <div class="event-detail">
+                <div class="detail-meta">${formatDateTime(post.date)}</div>
+                <h3>${post.title}</h3>
+                <img class="detail-hero" src="${post.image}" alt="${post.title}">
+                <div class="detail-body">${body}</div>
+                <div class="detail-actions">${linkBtn}</div>
+            </div>
+        `;
+        const btn = eventsFeedFull.querySelector('[data-event-link]');
+        if(btn && post.url){
+            btn.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(post.url, '_blank'); });
         }
+    }
 
+    function openEventDetail(post){
+        if(!eventsOverlay || !eventsFeedFull){
+            return;
+        }
+        if(!post){
+            eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
+        }else{
+            renderDetail(post);
+        }
         eventsOverlay.classList.remove('hidden');
         eventsOverlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('modal-open');
     }
 
-    function openEventsList(allEvents){
+    function openEventsList(allPosts){
         if(!eventsOverlay || !eventsFeedFull) return;
-        if(!allEvents || !allEvents.length){
+        if(!allPosts || !allPosts.length){
             eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
         } else {
-            eventsFeedFull.innerHTML = allEvents.map(ev => `
+            eventsFeedFull.innerHTML = allPosts.map(post => `
                 <div class="event-detail">
-                    <div class="detail-meta">${formatDateTime(ev.start_time)}</div>
-                    <h3>${ev.name}</h3>
-                    <img class="detail-hero" src="${eventImage(ev)}" alt="${ev.name}">
-                    <div class="detail-body">${ev.description || 'Sin descripción'}</div>
-                    <div class="detail-actions">
-                        ${ev.url ? `<button class="read-more-btn" data-event-link="${ev.url}">Visitar enlace</button>` : ''}
-                    </div>
+                    <div class="detail-meta">${formatDateTime(post.date)}</div>
+                    <h3>${post.title}</h3>
+                    <img class="detail-hero" src="${post.image}" alt="${post.title}">
+                    <div class="detail-body">${post.body || 'Sin descripción'}</div>
+                    <div class="detail-actions">${post.url ? `<button class="read-more-btn" data-event-link="${post.url}">Visitar enlace</button>` : ''}</div>
                 </div>
             `).join('');
 
             eventsFeedFull.querySelectorAll('[data-event-link]').forEach(btn => {
                 const link = btn.getAttribute('data-event-link');
                 if(link){
-                    btn.addEventListener('click', (e)=>{
-                        e.stopPropagation();
-                        window.open(link, '_blank');
-                    });
+                    btn.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(link, '_blank'); });
                 }
             });
         }
@@ -448,17 +517,36 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('modal-open');
     }
 
-    async function loadEventsIntoPage(){
+    function updateEventsGrid(){
         const grid = document.querySelector('[data-events-grid]');
         if(!grid) return;
-        eventsCache = await fetchEvents();
-        renderEvents(grid, eventsCache);
+        const slice = postsCache.slice(0, visibleCount);
+        renderEvents(grid, slice);
+        if(moreBtn){
+            const hasMore = visibleCount < postsCache.length;
+            moreBtn.style.display = postsCache.length ? 'block' : 'none';
+            moreBtn.classList.toggle('disabled', !hasMore);
+        }
+    }
+
+    async function loadEventsIntoPage(){
+        const grid = document.querySelector('[data-events-grid]');
+        const eventsSection = document.querySelector('.events');
+        if(!grid) return;
+        const [events, news] = await Promise.all([fetchEvents(), fetchNews()]);
+        postsCache = [...events.map(mapPost), ...news.map(mapPost)]
+            .sort((a,b)=> (b.date||0) - (a.date||0))
+            .slice(0,20);
+        visibleCount = Math.min(visibleCount, postsCache.length || 0) || 3;
+        updateEventsGrid();
+        if(eventsSection){
+            const hasContent = postsCache.length > 0;
+            eventsSection.style.display = hasContent ? '' : 'none';
+        }
     }
 
     if (eventsSeeMore && eventsOverlay && eventsFeedFull) {
-            function openEventsOverlay() {
-            openEventsList(eventsCache);
-            }
+        const openEventsOverlay = () => openEventsList(postsCache);
 
         eventsSeeMore.addEventListener('click', (e) => { e.preventDefault(); openEventsOverlay(); });
         const closeOverlay = () => {
@@ -470,6 +558,14 @@ document.addEventListener('DOMContentLoaded', () => {
         eventsOverlay.querySelector('[data-close]')?.addEventListener('click', closeOverlay);
         eventsOverlay.querySelector('.events-close')?.addEventListener('click', closeOverlay);
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOverlay(); });
+    }
+
+    if(moreBtn){
+        moreBtn.style.cursor = 'pointer';
+        moreBtn.addEventListener('click', ()=>{
+            visibleCount = Math.min(visibleCount + 3, postsCache.length);
+            updateEventsGrid();
+        });
     }
 
     loadEventsIntoPage();

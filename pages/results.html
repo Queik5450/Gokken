@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Resultados - Gokken</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+    <div class="header-container">
+        <div class="logo"><a class="logo-btn" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <input type="text" placeholder="Buscar">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+    <div class="menu-icon"><i class="fas fa-bars"></i></div>
+    </div>
+    </header>
+
+    <main class="section-padding">
+        <div class="list-header" style="border-left: none; padding-left:0;">
+            <h2 class="section-title">Resultados</h2>
+        </div>
+        <div id="resultsSummary" class="results-summary"></div>
+
+        <section class="result-section">
+            <div class="list-header" style="border-left:none; padding-left:0; margin-top:8px;">
+                <h3 class="section-title">Juegos</h3>
+            </div>
+            <div id="resultsListGames" class="results-list"></div>
+            <div id="resultsEmptyGames" class="list-placeholder" style="display:none; margin-top:10px;">Sin juegos</div>
+        </section>
+
+        <section class="result-section">
+            <div class="list-header" style="border-left:none; padding-left:0; margin-top:18px;">
+                <h3 class="section-title">Compañías</h3>
+            </div>
+            <div id="resultsListCompanies" class="results-list"></div>
+            <div id="resultsEmptyCompanies" class="list-placeholder" style="display:none; margin-top:10px;">Sin compañías</div>
+        </section>
+
+        <section class="result-section">
+            <div class="list-header" style="border-left:none; padding-left:0; margin-top:18px;">
+                <h3 class="section-title">Consolas</h3>
+            </div>
+            <div id="resultsListPlatforms" class="results-list"></div>
+            <div id="resultsEmptyPlatforms" class="list-placeholder" style="display:none; margin-top:10px;">Sin consolas</div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="contact-social"><span>Contactos</span><div class="social-icons"><i class="fab fa-discord"></i></div></div>
+            <div class="footer-info"><span>Acerca de: xxxxx</span></div>
+        </div>
+    </footer>
+
+    <script src="../js/search.js"></script>
+    <script src="../js/results.js"></script>
+</body>
+</html>

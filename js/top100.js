@@ -52,7 +52,6 @@ function renderList(games){
     </article>
   `).join('');
 
-  // click to game page
   root.querySelectorAll('.top-item').forEach((el, i)=>{
     el.style.cursor='pointer';
     el.addEventListener('click', ()=>{
@@ -66,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const games = await fetchTop(100);
   renderList(games);
 
-  // simple rating filter
   const fRating = document.getElementById('fRating');
   fRating?.addEventListener('change', ()=>{
     const min = fRating.value==='all'? 0 : Number(fRating.value);

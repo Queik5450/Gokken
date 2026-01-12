@@ -43,12 +43,17 @@ function renderMain(item, name){
 
 document.addEventListener('DOMContentLoaded', async () => {
   const idParam = getQueryParam('id');
+  const slugParam = getQueryParam('slug');
   const root = document.getElementById('gameRoot');
   if(!root) return;
 
-  // Decide si es id numérico o slug por nombre
   const isNumeric = idParam && /^\d+$/.test(idParam);
-  const qs = isNumeric ? `id=${idParam}` : `name=${encodeURIComponent(idParam||'')}`;
+  const effectiveSlug = slugParam || (!isNumeric && idParam ? idParam : null);
+  const qs = isNumeric
+    ? `id=${idParam}`
+    : effectiveSlug
+      ? `slug=${encodeURIComponent(effectiveSlug)}`
+      : `name=${encodeURIComponent(idParam||'')}`;
 
   let game;
   try{
@@ -63,21 +68,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const name = game.name || 'Juego';
   const poster = imgUrl('t_cover_big', game.cover?.image_id);
-  // Hero: usa artwork o screenshot grande si existe
   const heroId = (game.artworks?.[0]?.image_id) || (game.screenshots?.[0]?.image_id) || game.cover?.image_id;
   const hero = imgUrl('t_screenshot_big', heroId);
-  const rating = Math.round(Number(game.rating||0))/10; // normaliza a escala 0-10 si fuese 0-100
+  const rating100 = Number(game.rating || 0);
+  const rating10 = rating100 ? (rating100/10).toFixed(1) : 'N/A';
   const companies = (game.involved_companies||[]).map(ic=>ic.company?.name).filter(Boolean);
   const genres = (game.genres||[]).map(g=>g.name);
   const platforms = (game.platforms||[]).map(p=>p.name);
-  const releaseHuman = (game.release_dates?.[0]?.human) || (game.first_release_date ? new Date(game.first_release_date*1000).toLocaleDateString() : 'N/D');
+  const releaseHuman = (game.release_dates?.[0]?.human) || (game.first_release_date ? new Date(game.first_release_date*1000).toLocaleDateString('es-ES') : 'N/D');
   const screenshots = (game.screenshots||[]).slice(0,8);
   const artworks = (game.artworks||[]).slice(0,4);
   const videoId = (game.videos||[])[0]?.video_id || '';
   const short = game.summary || '';
   const long = game.storyline || game.summary || '';
 
-  // Construimos una galería ordenada: video (si hay), luego screenshots, luego artworks, luego cover/hero
   const media = [];
   if(videoId){
     media.push({ type:'video', src: toEmbed(videoId), thumb: youtubeThumb(videoId), poster: youtubeThumb(videoId), alt: `${name} trailer` });
@@ -89,48 +93,59 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   root.innerHTML = `
-    <div class="game-detail">
-      <div class="game-hero"><img src="${hero}" alt="hero"></div>
-      <div class="game-meta">
-        <div class="left">
-          <h1 class="game-title">${name}</h1>
-          <div class="meta-grid">
-            <div><strong>Desarrolladora</strong><div>${companies[0]||'N/D'}</div></div>
-            <div><strong>Publisher</strong><div>${companies[1]||companies[0]||'N/D'}</div></div>
-            <div><strong>Compañía</strong><div>${companies.join(', ')||'N/D'}</div></div>
-            <div><strong>Lanzado el</strong><div>${releaseHuman}</div></div>
+    <div class="game-page">
+      <section class="hero-top" style="background-image:url('${hero}')">
+        <div class="hero-top-content">
+          <h1>${name}</h1>
+          <div class="hero-meta-row">
+            <div><span>Desarrolladora</span>${companies[0]||'N/D'}</div>
+            <div><span>Publisher</span>${companies[1]||companies[0]||'N/D'}</div>
+            <div><span>Compañía</span>${companies.join(', ')||'N/D'}</div>
+            <div><span>Lanzado el</span>${releaseHuman}</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="media-row">
-        <div id="mainMedia" class="main-media">${renderMain(media[0], name)}</div>
-        <div class="thumbs">${media.map((m,idx)=>`
-          <button class="thumb ${idx===0?'active':''}" data-idx="${idx}"><img src="${m.thumb}" alt="thumb ${idx+1}"></button>
-        `).join('')}</div>
-      </div>
+      <section class="game-content">
+        <div class="media-column">
+          <div id="mainMedia" class="main-media modern">${renderMain(media[0], name)}</div>
+          <div class="thumbs modern">${media.map((m,idx)=>`
+            <button class="thumb ${idx===0?'active':''}" data-idx="${idx}"><img src="${m.thumb}" alt="thumb ${idx+1}"></button>
+          `).join('')}</div>
+        </div>
+        <div class="info-column">
+          <div class="info-block">
+            <h4>Resumen</h4>
+            <p>${short || 'Sin resumen disponible.'}</p>
+          </div>
+          <div class="info-grid">
+            <div>
+              <div class="stat-label">Géneros</div>
+              <div class="pill-row">${genres.map(g=>`<span class="pill">${g}</span>`).join('') || '<span class="pill">N/D</span>'}</div>
+            </div>
+            <div>
+              <div class="stat-label">Plataformas</div>
+              <div class="pill-row">${platforms.map(p=>`<span class="pill">${p}</span>`).join('') || '<span class="pill">N/D</span>'}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Calificación</div>
+              <div class="stat-value">${rating10}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Clasificación</div>
+              <div class="badge-class">${rating100 >= 180 ? '18' : '18'}</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div class="game-body">
-        <div class="col-left">
-          <p class="short">${short}</p>
-          <h4>Géneros</h4>
-          <div class="tags">${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
-          <h4>Plataformas</h4>
-          <div class="tags">${platforms.map(p=>`<span class="tag platform">${p}</span>`).join('')}</div>
-          <h4>Lenguajes</h4>
-          <div class="tags"><span class="tag">ENG</span></div>
-          <h4>Puntuación</h4>
-          <div class="score-box">${(rating||0).toFixed(1)}</div>
-        </div>
-        <div class="col-right">
-          <h4>Descripción</h4>
-          <p>${String(long).replace(/\n/g,'<br>')}</p>
-        </div>
-      </div>
+      <section class="game-description">
+        <h4>Historia</h4>
+        <p>${String(long||'Sin descripción').replace(/\n/g,'<br>')}</p>
+      </section>
     </div>
   `;
 
-  // Interacciones de galería
   const mainEl = document.getElementById('mainMedia');
   const thumbEls = root.querySelectorAll('.thumb');
   function mountVideoPlay(){

@@ -1,4 +1,8 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+// Load env from backend/.env first, then fall back to repo root if needed
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
@@ -11,6 +15,9 @@ let tokenExpiry = 0;
 
 // Helper to get/refresh token
 async function getAccessToken() {
+    if (!process.env.IGDB_CLIENT_ID || !process.env.IGDB_CLIENT_SECRET) {
+        throw new Error('Missing IGDB_CLIENT_ID or IGDB_CLIENT_SECRET');
+    }
     if (accessToken && Date.now() < tokenExpiry) return accessToken;
 
     const url = `https://id.twitch.tv/oauth2/token?client_id=${process.env.IGDB_CLIENT_ID}&client_secret=${process.env.IGDB_CLIENT_SECRET}&grant_type=client_credentials`;
@@ -43,7 +50,7 @@ app.get('/api/top-games', async (req, res) => {
         const limit = Number(req.query.limit || 10);
         const order = req.query.order === 'new' ? 'first_release_date desc' : 'rating desc';
         const data = await igdbQuery('games', `
-            fields name, cover.image_id, screenshots.image_id, artworks.image_id, rating, rating_count, summary, slug, first_release_date;
+            fields id, name, cover.image_id, screenshots.image_id, artworks.image_id, rating, rating_count, summary, slug, first_release_date;
             sort ${order};
             where rating != null & cover != null & rating_count > 50;
             limit ${Math.min(Math.max(limit,1),100)};
@@ -155,6 +162,145 @@ app.get('/api/companies', async (req, res) => {
     }
 });
 
+// Company detail with games and average rating
+app.get('/api/company', async (req, res) => {
+    try {
+        const id = req.query.id ? Number(req.query.id) : null;
+        const slug = req.query.slug || null;
+        if (!id && !slug) return res.status(400).json({ error: 'Missing id or slug' });
+
+        const where = id ? `where id = ${id};` : `where slug = "${slug}";`;
+        const companies = await igdbQuery('companies', `
+            fields id, name, slug, description, logo.image_id, country, start_date, websites.url, websites.category;
+            ${where}
+            limit 1;
+        `);
+
+        if (!companies || !companies.length) return res.status(404).json({ error: 'Company not found' });
+        const company = companies[0];
+
+        const games = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, rating_count, first_release_date, involved_companies.company;
+            where involved_companies.company = ${company.id} & cover != null;
+            sort rating desc;
+            limit 30;
+        `);
+
+        const rated = games.filter(g => typeof g.rating === 'number');
+        const avg = rated.length ? rated.reduce((s,g)=>s+g.rating,0) / rated.length : null;
+
+        res.json({
+            ...company,
+            avg_rating: avg,
+            rating_count: rated.length,
+            games
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch company' });
+    }
+});
+
+// Search games by text
+app.get('/api/search/games', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+        if (!q) return res.status(400).json({ error: 'Missing query' });
+
+        const data = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, first_release_date;
+            search "${q}";
+            limit ${limit};
+        `);
+
+        res.json(data);
+    } catch (error) {
+        console.error('Search games failed', error?.response?.data || error.message || error);
+        // Graceful degrade: return empty array so UI keeps working
+        res.status(200).json([]);
+    }
+});
+
+// Search companies by text
+app.get('/api/search/companies', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+        if (!q) return res.status(400).json({ error: 'Missing query' });
+
+        const data = await igdbQuery('companies', `
+            fields id, name, slug, logo.image_id, country, start_date;
+            search "${q}";
+            where logo != null;
+            limit ${limit};
+        `);
+
+        res.json(data);
+    } catch (error) {
+        console.error('Search companies failed', error?.response?.data || error.message || error);
+        // Graceful degrade: return empty array so UI keeps working
+        res.status(200).json([]);
+    }
+});
+
+// Search platforms/consoles by text
+app.get('/api/search/platforms', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+        if (!q) return res.status(400).json({ error: 'Missing query' });
+
+        const data = await igdbQuery('platforms', `
+            fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
+            search "${q}";
+            where platform_logo != null;
+            limit ${limit};
+        `);
+
+        res.json(data);
+    } catch (error) {
+        console.error('Search platforms failed', error?.response?.data || error.message || error);
+        // Graceful degrade: return empty array so UI keeps working
+        res.status(200).json([]);
+    }
+});
+
+// Combined search returning games, companies, and platforms
+app.get('/api/search/all', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 30);
+        if (!q) return res.status(400).json({ error: 'Missing query' });
+
+        const [games, companies, platforms] = await Promise.all([
+            igdbQuery('games', `
+                fields id, name, slug, cover.image_id, rating, first_release_date;
+                search "${q}";
+                limit ${limit};
+            `),
+            igdbQuery('companies', `
+                fields id, name, slug, logo.image_id, country, start_date;
+                search "${q}";
+                where logo != null;
+                limit ${limit};
+            `),
+            igdbQuery('platforms', `
+                fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
+                search "${q}";
+                where platform_logo != null;
+                limit ${limit};
+            `)
+        ]);
+
+        res.json({ games, companies, platforms });
+    } catch (error) {
+        console.error('Search all failed', error?.response?.data || error.message || error);
+        // Graceful degrade: return empty collections so UI keeps working
+        res.status(200).json({ games: [], companies: [], platforms: [] });
+    }
+});
+
 // Gaming-related events (upcoming + recent)
 app.get('/api/events', async (req, res) => {
     try {
@@ -176,18 +322,38 @@ app.get('/api/events', async (req, res) => {
     }
 });
 
+// Gaming news (latest pulse items)
+app.get('/api/news', async (req, res) => {
+    try {
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+        const pulses = await igdbQuery('pulses', `
+            fields id, title, summary, published_at, updated_at, pulse_image.image_id, websites.url, url;
+            sort published_at desc;
+            limit ${limit};
+        `);
+
+        res.json(pulses || []);
+    } catch (error) {
+        console.error('Fetch news failed', error?.response?.data || error.message || error);
+        // graceful: return empty list
+        res.status(200).json([]);
+    }
+});
+
 // Game detail by id or name slug
 app.get('/api/game', async (req, res) => {
     try {
         const id = req.query.id ? Number(req.query.id) : null;
-        const nameOrSlug = req.query.name || req.query.slug || null;
+        const slug = req.query.slug || null;
+        const name = req.query.name || null;
 
         let whereOrSearch = '';
         if (id) {
             whereOrSearch = `where id = ${id};`;
-        } else if (nameOrSlug) {
-            // Prefer slug if passed, fallback to search by name
-            whereOrSearch = `search "${nameOrSlug}";`;
+        } else if (slug) {
+            whereOrSearch = `where slug = "${slug}";`;
+        } else if (name) {
+            whereOrSearch = `search "${name}";`;
         } else {
             return res.status(400).json({ error: 'Missing id or name/slug' });
         }
@@ -216,6 +382,28 @@ app.get('/api/game', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch game detail' });
+    }
+});
+
+// Platform detail by id or slug
+app.get('/api/platform', async (req, res) => {
+    try {
+        const id = req.query.id ? Number(req.query.id) : null;
+        const slug = req.query.slug || null;
+        if (!id && !slug) return res.status(400).json({ error: 'Missing id or slug' });
+
+        const where = id ? `where id = ${id};` : `where slug = "${slug}";`;
+        const platforms = await igdbQuery('platforms', `
+            fields name, slug, abbreviation, summary, generation, platform_logo.image_id, platform_family.name, category, websites.url, websites.category;
+            ${where}
+            limit 1;
+        `);
+
+        if (!platforms || !platforms.length) return res.status(404).json({ error: 'Platform not found' });
+        res.json(platforms[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch platform' });
     }
 });
 

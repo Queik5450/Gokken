@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <!-- Header -->
     <header>
@@ -53,24 +54,24 @@
             <button class="carousel-nav left"><i class="fas fa-chevron-left"></i></button>
             <div class="game-cards-container">
                 <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=God+of+War" alt="God of War">
-                    <div class="game-title">God of War</div>
+                    <img src="https://placehold.co/200x280/333/white?text=Game+1" alt="Game 1">
+                    <div class="game-title">Game 1</div>
                 </div>
                 <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=RDR2" alt="RDR2">
-                    <div class="game-title">Red Dead Redemption II</div>
+                    <img src="https://placehold.co/200x280/333/white?text=Game+2" alt="Game 2">
+                    <div class="game-title">Game 2</div>
                 </div>
                 <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=Spider-Man" alt="Spider-Man">
-                    <div class="game-title">Marvel's Spider-Man</div>
+                    <img src="https://placehold.co/200x280/333/white?text=Game+3" alt="Game 3">
+                    <div class="game-title">Game 3</div>
                 </div>
                 <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=RDR2" alt="RDR2">
-                    <div class="game-title">Red Dead Redemption II</div>
+                    <img src="https://placehold.co/200x280/333/white?text=Game+4" alt="Game 4">
+                    <div class="game-title">Game 4</div>
                 </div>
                 <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=God+of+War" alt="God of War">
-                    <div class="game-title">God of War: Ragnarok</div>
+                    <img src="https://placehold.co/200x280/333/white?text=Game+5" alt="Game 5">
+                    <div class="game-title">Game 5</div>
                 </div>
             </div>
             <button class="carousel-nav right"><i class="fas fa-chevron-right"></i></button>
@@ -81,7 +82,7 @@
         <div class="list-column">
             <div class="list-header">
                 <h3>Recientes</h3>
-                <a href="#" class="see-more">Ver más <i class="fas fa-chevron-right"></i></a>
+                <a href="releases.html?kind=recent" class="see-more">Ver más <i class="fas fa-chevron-right"></i></a>
             </div>
             <div class="list-items" data-list="recent">
                 <div class="list-placeholder">Cargando lanzamientos de los últimos 15 días...</div>
@@ -93,7 +94,7 @@
         <div class="list-column">
             <div class="list-header">
                 <h3>Próximamente</h3>
-                <a href="#" class="see-more">Ver más <i class="fas fa-chevron-right"></i></a>
+                <a href="releases.html?kind=upcoming" class="see-more">Ver más <i class="fas fa-chevron-right"></i></a>
             </div>
             <div class="list-items" data-list="upcoming">
                 <div class="list-placeholder">Cargando lanzamientos de los próximos 15 días...</div>
@@ -114,7 +115,7 @@
 
     <section class="events section-padding">
         <div class="list-header">
-            <h3 class="section-title">EVENTOS</h3>
+            <h3 class="section-title">EVENTOS / NOTICIAS</h3>
             <a href="#" class="see-more red-text">Ver todos <i class="fas fa-chevron-right"></i></a>
         </div>
         <div class="events-grid" data-events-grid>
@@ -158,6 +159,7 @@
         </div>
     </div>
 
+    <script src="../js/search.js"></script>
     <script src="../js/igdbAPI.js"></script>
     <script src="../js/mainPage.js"></script>
 </body>
