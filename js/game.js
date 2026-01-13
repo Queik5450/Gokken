@@ -32,13 +32,13 @@ function renderMain(item, name){
     const poster = item.poster || item.thumb || '';
     const src = item.src;
     return `
-      <div class="main-video" data-type="video" data-src="${src}">
-        ${poster ? `<img class="video-poster" src="${poster}" alt="${name} trailer">` : ''}
-        <button class="play-btn" aria-label="Reproducir video">▶</button>
+      <div class="main-video relative aspect-video bg-black overflow-hidden" data-type="video" data-src="${src}">
+        ${poster ? `<img class="video-poster absolute inset-0 w-full h-full object-cover" src="${poster}" alt="${name} trailer">` : ''}
+        <button class="play-btn absolute inset-0 flex items-center justify-center text-white text-4xl bg-black/40 hover:bg-black/60 transition" aria-label="Reproducir video">▶</button>
       </div>
     `;
   }
-  return `<img src="${item.src}" alt="${item.alt || name}">`;
+  return `<img class="w-full h-full object-cover" src="${item.src}" alt="${item.alt || name}">`;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -96,69 +96,72 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   root.innerHTML = `
-    <div class="game-page">
-      <section class="hero-top" style="background-image:url('${hero}')">
-        <div class="hero-top-content">
-          <h1>${name}</h1>
-          <div class="hero-meta-row">
-            <div><span>Desarrolladora</span>${companies[0]||'N/D'}</div>
-            <div><span>Publisher</span>${companies[1]||companies[0]||'N/D'}</div>
-            <div><span>Compañía</span>${companies.join(', ')||'N/D'}</div>
-            <div><span>Lanzado el</span>${releaseHuman}</div>
+    <div class="game-page space-y-10">
+      <section class="hero-top relative w-full min-h-[360px] lg:min-h-[440px] bg-cover bg-center flex items-end" style="background-image:url('${hero}')">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/90"></div>
+        <div class="hero-top-content relative z-10 max-w-6xl mx-auto px-4 pb-10 pt-16 w-full flex flex-col gap-3">
+          <h1 class="text-3xl md:text-4xl font-bold uppercase">${name}</h1>
+          <div class="hero-meta-row grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-200">
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Desarrolladora</span>${companies[0]||'N/D'}</div>
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Publisher</span>${companies[1]||companies[0]||'N/D'}</div>
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Compañía</span>${companies.join(', ')||'N/D'}</div>
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Lanzado el</span>${releaseHuman}</div>
           </div>
-          ${isFutureRelease ? `<div class="release-countdown" id="releaseCountdown"></div>` : ''}
+          ${isFutureRelease ? `<div class="release-countdown inline-block bg-black/60 border border-white/10 px-4 py-2 rounded-lg font-semibold" id="releaseCountdown"></div>` : ''}
         </div>
       </section>
 
-      <section class="game-content">
-        <div class="media-column">
-          <div id="mainMedia" class="main-media modern">${renderMain(media[0], name)}</div>
-          <div class="thumbs modern">${media.map((m,idx)=>`
-            <button class="thumb ${idx===0?'active':''}" data-idx="${idx}"><img src="${m.thumb}" alt="thumb ${idx+1}"></button>
-          `).join('')}</div>
-        </div>
-        <div class="info-column">
-          <div class="info-block">
-            <h4>Resumen</h4>
-            <p>${short || 'Sin resumen disponible.'}</p>
+      <div class="max-w-6xl mx-auto px-4 space-y-8">
+        <section class="game-content grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+          <div class="media-column space-y-3">
+            <div id="mainMedia" class="main-media modern rounded-xl overflow-hidden border border-border bg-black/40">${renderMain(media[0], name)}</div>
+            <div class="thumbs modern flex flex-wrap gap-3">${media.map((m,idx)=>`
+              <button class="thumb ${idx===0?'active':''} border border-border rounded-lg overflow-hidden focus:outline-none" data-idx="${idx}"><img class="w-24 h-14 object-cover" src="${m.thumb}" alt="thumb ${idx+1}"></button>
+            `).join('')}</div>
           </div>
-          <div class="info-grid">
-            <div>
-              <div class="stat-label">Géneros</div>
-              <div class="pill-row">${genres.map(g=>{
-                const query = g.id ? `genreId=${g.id}&genreName=${encodeURIComponent(g.name)}` : `q=${encodeURIComponent(g.name)}`;
-                return `<a class="pill pill-link" href="results.html?${query}">${g.name}</a>`;
-              }).join('') || '<span class="pill">N/D</span>'}</div>
+          <div class="info-column space-y-4">
+            <div class="info-block bg-panel border border-border rounded-lg p-4 space-y-2">
+              <h4 class="text-lg font-semibold">Resumen</h4>
+              <p class="text-gray-200 text-sm leading-relaxed">${short || 'Sin resumen disponible.'}</p>
             </div>
-            <div>
-              <div class="stat-label">Plataformas</div>
-              <div class="pill-row">${platforms.map(p=>{
-                const query = p.id ? `platformId=${p.id}&platformName=${encodeURIComponent(p.name)}` : `q=${encodeURIComponent(p.name)}`;
-                return `<a class="pill pill-link" href="results.html?${query}">${p.name}</a>`;
-              }).join('') || '<span class="pill">N/D</span>'}</div>
+            <div class="info-grid grid grid-cols-2 gap-3">
+              <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Géneros</div>
+                <div class="pill-row flex flex-wrap gap-2">${genres.map(g=>{
+                  const query = g.id ? `genreId=${g.id}&genreName=${encodeURIComponent(g.name)}` : `q=${encodeURIComponent(g.name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${g.name}</a>`;
+                }).join('') || '<span class="pill">N/D</span>'}</div>
+              </div>
+              <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Plataformas</div>
+                <div class="pill-row flex flex-wrap gap-2">${platforms.map(p=>{
+                  const query = p.id ? `platformId=${p.id}&platformName=${encodeURIComponent(p.name)}` : `q=${encodeURIComponent(p.name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${p.name}</a>`;
+                }).join('') || '<span class="pill">N/D</span>'}</div>
+              </div>
+              <div class="stat-box bg-panel border border-border rounded-lg p-4 flex flex-col gap-2 items-start">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Calificación</div>
+                <div class="stat-value text-2xl font-bold">${rating10}</div>
+              </div>
+              <div class="stat-box bg-panel border border-border rounded-lg p-4 flex flex-col gap-2 items-start">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Clasificación</div>
+                <div class="badge-class inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-white font-bold">${rating100 >= 180 ? '18' : '18'}</div>
+              </div>
             </div>
-            <div class="stat-box">
-              <div class="stat-label">Calificación</div>
-              <div class="stat-value">${rating10}</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">Clasificación</div>
-              <div class="badge-class">${rating100 >= 180 ? '18' : '18'}</div>
+            <div class="info-block bg-panel border border-border rounded-lg p-4 space-y-2">
+              <h4 class="text-lg font-semibold">Idiomas</h4>
+              <div class="pill-row flex flex-wrap gap-2">
+                ${languageSupports.map(lang=>`<span class="pill inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm">${lang}</span>`).join('') || '<span class="pill">N/D</span>'}
+              </div>
             </div>
           </div>
-          <div class="info-block">
-            <h4>Idiomas</h4>
-            <div class="pill-row">
-              ${languageSupports.map(lang=>`<span class="pill">${lang}</span>`).join('') || '<span class="pill">N/D</span>'}
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="game-description">
-        <h4>Historia</h4>
-        <p>${String(long||'Sin descripción').replace(/\n/g,'<br>')}</p>
-      </section>
+        <section class="game-description bg-panel border border-border rounded-lg p-4 space-y-2">
+          <h4 class="text-lg font-semibold">Historia</h4>
+          <p class="text-gray-200 leading-relaxed text-sm">${String(long||'Sin descripción').replace(/\n/g,'<br>')}</p>
+        </section>
+      </div>
     </div>
   `;
 

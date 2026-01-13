@@ -4,63 +4,77 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Resultados - Gokken</title>
-    <link rel="stylesheet" href="../css/global.css">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#ff0000',
+                            surface: '#0f0f0f',
+                            panel: '#141414',
+                            border: '#1f1f1f'
+                        },
+                        fontFamily: {
+                            sans: ['Roboto', 'ui-sans-serif', 'system-ui']
+                        }
+                    }
+                }
+            }
+        </script>
+    <link rel="stylesheet" href="../css/common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-    <header>
-    <div class="header-container">
-        <div class="logo"><a class="logo-btn" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
-        <div class="search-bar">
-            <div class="search-input-wrapper">
-                <input type="text" placeholder="Buscar">
-                <i class="fas fa-search"></i>
+<body class="bg-neutral-950 text-gray-100 font-sans">
+        <header class="bg-surface/80 backdrop-blur border-b border-border">
+            <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
+                <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
+                <div class="search-bar flex-1">
+                    <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
+                        <input type="text" placeholder="Buscar" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
+                        <i class="fas fa-search text-primary"></i>
+                    </div>
+                </div>
+                <div class="menu-icon text-primary text-2xl"><i class="fas fa-bars"></i></div>
             </div>
-        </div>
-    <div class="menu-icon"><i class="fas fa-bars"></i></div>
-    </div>
-    </header>
+        </header>
 
-    <main class="section-padding">
-        <div class="list-header" style="border-left: none; padding-left:0;">
-            <h2 class="section-title">Resultados</h2>
-        </div>
-        <div id="resultsSummary" class="results-summary"></div>
+        <main class="pt-6 pb-10">
+            <div class="max-w-6xl mx-auto px-4 space-y-8">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <h2 class="text-2xl font-bold">Resultados</h2>
+                    <div id="resultsSummary" class="results-summary text-sm text-gray-300"></div>
+                </div>
 
-        <section class="result-section">
-            <div class="list-header" style="border-left:none; padding-left:0; margin-top:8px;">
-                <h3 class="section-title">Juegos</h3>
+                <section class="result-section space-y-3">
+                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Juegos</h3></div>
+                    <div id="resultsListGames" class="results-list space-y-3"></div>
+                    <div id="resultsEmptyGames" class="list-placeholder text-gray-400" style="display:none;">Sin juegos</div>
+                    <div id="resultsPager" class="results-pager" style="display:none;"></div>
+                </section>
+
+                <section class="result-section space-y-3">
+                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Compañías</h3></div>
+                    <div id="resultsListCompanies" class="results-list space-y-3"></div>
+                    <div id="resultsEmptyCompanies" class="list-placeholder text-gray-400" style="display:none;">Sin compañías</div>
+                </section>
+
+                <section class="result-section space-y-3">
+                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Consolas</h3></div>
+                    <div id="resultsListPlatforms" class="results-list space-y-3"></div>
+                    <div id="resultsEmptyPlatforms" class="list-placeholder text-gray-400" style="display:none;">Sin consolas</div>
+                </section>
             </div>
-            <div id="resultsListGames" class="results-list"></div>
-            <div id="resultsEmptyGames" class="list-placeholder" style="display:none; margin-top:10px;">Sin juegos</div>
-            <div id="resultsPager" class="results-pager" style="display:none;"></div>
-        </section>
+        </main>
 
-        <section class="result-section">
-            <div class="list-header" style="border-left:none; padding-left:0; margin-top:18px;">
-                <h3 class="section-title">Compañías</h3>
-            </div>
-            <div id="resultsListCompanies" class="results-list"></div>
-            <div id="resultsEmptyCompanies" class="list-placeholder" style="display:none; margin-top:10px;">Sin compañías</div>
-        </section>
-
-        <section class="result-section">
-            <div class="list-header" style="border-left:none; padding-left:0; margin-top:18px;">
-                <h3 class="section-title">Consolas</h3>
-            </div>
-            <div id="resultsListPlatforms" class="results-list"></div>
-            <div id="resultsEmptyPlatforms" class="list-placeholder" style="display:none; margin-top:10px;">Sin consolas</div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="footer-content">
-            <div class="contact-social"><span>Contactos</span><div class="social-icons"><i class="fab fa-discord"></i></div></div>
-            <div class="footer-info"><span>Acerca de: xxxxx</span></div>
-        </div>
-    </footer>
+        <footer class="bg-panel border-t border-border">
+                <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
+                        <div class="contact-social flex items-center gap-3"><span class="font-semibold">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
+                        <div class="footer-info">Acerca de: xxxxx</div>
+                </div>
+        </footer>
 
     <script src="../js/search.js"></script>
     <script src="../js/results.js"></script>

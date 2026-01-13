@@ -69,37 +69,84 @@ function renderCompany(root, data){
     const featured = games.slice(0,5);
     const countryTxt = data.country ? `País código: ${data.country}` : 'País: Desconocido';
     const ratingTxt = data.avg_rating ? `${data.avg_rating.toFixed(1)} / 100` : 'Sin rating';
+    const toHost = (url = '') => {
+        try { return new URL(url).hostname; } catch { return url.replace(/^https?:\/\//,''); }
+    };
 
     root.innerHTML = `
-        <div class="company-modal-content static-page">
-            <div class="company-banner">
-                <div class="company-banner-inner">
-                    <div class="company-logo-wrap"><img src="${logoUrl(data)}" alt="${data.name}"></div>
-                    <div class="company-stars">${starIcons(data.avg_rating)}</div>
-                </div>
-            </div>
-            <div class="company-body">
-                <div class="company-left">
-                    <div class="info-row"><strong>${countryTxt}</strong></div>
-                    <div class="info-row"><strong>Rating:</strong> <span>${ratingTxt}</span></div>
-                    <div class="info-row"><strong>Enlaces:</strong>
-                        <div class="cm-links">
-                            ${(data.websites||[]).slice(0,3).map(w=>`<a href="${w.url}" target="_blank" rel="noreferrer">🔗</a>`).join(' ') || '<span>Sin enlaces</span>'}
+        <div class="company-page space-y-8">
+            <section class="bg-panel border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/30">
+                <div class="relative">
+                    <div class="h-28 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent"></div>
+                    <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(circle at 20% 20%, rgba(255,0,0,0.25), transparent 40%)"></div>
+                    <div class="relative px-6 pb-6 -mt-10 flex flex-col lg:flex-row gap-6 items-start">
+                        <div class="w-28 h-28 bg-surface border border-border rounded-xl shadow-lg overflow-hidden shrink-0">
+                            <img src="${logoUrl(data)}" alt="${data.name}" class="w-full h-full object-contain">
+                        </div>
+                        <div class="flex-1 grid gap-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                <h1 class="text-2xl lg:text-3xl font-bold leading-tight">${data.name || 'Compañía'}</h1>
+                                <div class="flex items-center gap-2 text-amber-400 text-xl" aria-label="Rating promedio">
+                                    ${starIcons(data.avg_rating)}
+                                </div>
+                                <span class="text-sm text-gray-200 bg-surface border border-border px-3 py-1 rounded-full">${ratingTxt}</span>
+                            </div>
+                            <p class="text-gray-300 text-sm leading-relaxed">${data.description || 'Sin descripción'}</p>
+                            <div class="flex flex-wrap gap-3 text-sm text-gray-200">
+                                <span class="px-3 py-1 rounded-full bg-surface border border-border">${countryTxt}</span>
+                                <span class="px-3 py-1 rounded-full bg-surface border border-border">Juegos: ${games.length}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-gray-100">Enlaces:</span>
+                                    <div class="flex items-center gap-2">
+                                        ${(data.websites||[]).slice(0,3).map(w=>`<a class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener" aria-label="Enlace externo">🔗</a>`).join('') || '<span class="text-gray-400">Sin enlaces</span>'}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="company-right"><h3>Quiénes somos</h3><div class="cm-description">${data.description || 'Sin descripción'}</div></div>
-            </div>
-            <div class="company-featured">
-                <div class="featured-header"><strong>Juegos Destacados</strong></div>
-                <div class="featured-wrapper">
-                    <button class="fnav" data-fprev><i class="fas fa-chevron-left"></i></button>
-                    <div class="featured-cards">
-                        ${featured.map(f => `<div class="fcard" data-game-id="${f.id || f.slug || ''}"><img src="${coverUrl(f)}"><div class="ftitle">${f.name}</div></div>`).join('') || '<div class="list-placeholder">Sin juegos</div>'}
+            </section>
+
+            <section class="grid lg:grid-cols-3 gap-6">
+                <div class="bg-panel border border-border rounded-2xl p-5 space-y-4">
+                    <h2 class="text-lg font-semibold text-gray-100">Ficha</h2>
+                    <div class="space-y-3 text-sm text-gray-300">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-gray-400">País</span>
+                            <span class="text-gray-100 text-right">${countryTxt}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-gray-400">Rating</span>
+                            <span class="text-gray-100 text-right">${ratingTxt}</span>
+                        </div>
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="text-gray-400">Sitios</span>
+                            <div class="flex flex-wrap gap-2 justify-end">
+                                ${(data.websites||[]).slice(0,3).map(w=>`<a class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener">${toHost(w.url)}</a>`).join('') || '<span class="text-gray-400">Sin enlaces</span>'}
+                            </div>
+                        </div>
                     </div>
-                    <button class="fnav" data-fnext><i class="fas fa-chevron-right"></i></button>
                 </div>
-            </div>
+                <div class="bg-panel border border-border rounded-2xl p-5 lg:col-span-2 space-y-3">
+                    <h2 class="text-lg font-semibold text-gray-100">Quiénes somos</h2>
+                    <div class="text-gray-300 leading-relaxed whitespace-pre-line">${data.description || 'Sin descripción'}</div>
+                </div>
+            </section>
+
+            <section class="bg-panel border border-border rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-lg font-semibold text-gray-100">Juegos destacados</h2>
+                    <div class="flex items-center gap-2">
+                        <button class="fnav inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface hover:border-primary text-gray-200 transition" data-fprev aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
+                        <button class="fnav inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface hover:border-primary text-gray-200 transition" data-fnext aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="overflow-hidden -mx-1">
+                    <div class="featured-cards flex gap-4 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
+                        ${featured.map(f => `<div class="fcard w-40 shrink-0 snap-start bg-surface border border-border rounded-xl overflow-hidden shadow-md hover:border-primary transition cursor-pointer" data-game-id="${f.id || f.slug || ''}"><div class="aspect-[3/4] bg-neutral-900"><img src="${coverUrl(f)}" class="w-full h-full object-cover" alt="${f.name}"></div><div class="ftitle px-3 py-2 text-sm font-semibold text-gray-100 leading-tight">${f.name}</div></div>`).join('') || '<div class="list-placeholder text-gray-400">Sin juegos</div>'}
+                    </div>
+                </div>
+            </section>
         </div>
     `;
 

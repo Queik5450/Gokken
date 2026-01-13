@@ -191,7 +191,7 @@ function renderList(listEl, games, { emptyText = 'Sin resultados', statusBuilder
         const gid = normalizeGameId(game);
         const status = statusBuilder ? statusBuilder(game) : '';
         const item = document.createElement('div');
-        item.className = 'list-item';
+        item.className = 'list-item flex items-center gap-4';
         item.setAttribute('data-game-id', gid);
         item.innerHTML = `
             <img src="${coverSmall(game)}" alt="${game.name}">

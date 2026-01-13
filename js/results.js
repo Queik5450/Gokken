@@ -105,14 +105,14 @@ function renderSection(list, empty, items, builder){
 function buildGameRow(g){
     const gid = g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase());
     const row = document.createElement('div');
-    row.className = 'result-row';
+    row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
     row.innerHTML = `
-        <div class="result-cover"><img src="${coverUrl(g)}" alt="${g.name}"></div>
-        <div class="result-main">
-            <div class="result-title">${g.name}</div>
-            <div class="result-meta">${formatDate(g.first_release_date) || 'Sin fecha'}</div>
+        <div class="result-cover w-16 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0"><img src="${coverUrl(g)}" alt="${g.name}" class="w-full h-full object-cover"></div>
+        <div class="result-main flex-1 min-w-0">
+            <div class="result-title text-base font-semibold text-gray-100 truncate">${g.name}</div>
+            <div class="result-meta text-sm text-gray-400">${formatDate(g.first_release_date) || 'Sin fecha'}</div>
         </div>
-        <div class="result-rating ${g.rating ? '' : 'empty'}">${g.rating ? g.rating.toFixed(1) : 'N/A'}</div>
+        <div class="result-rating ${g.rating ? '' : 'empty'} text-sm font-semibold px-3 py-1 rounded-full border ${g.rating ? 'border-primary text-primary' : 'border-border text-gray-400'}">${g.rating ? g.rating.toFixed(1) : 'N/A'}</div>
     `;
     row.addEventListener('click', ()=> window.location.href = `game.html?id=${gid}`);
     return row;
@@ -123,14 +123,14 @@ function buildCompanyRow(c){
     const countryTxt = c.country ? `País código: ${c.country}` : 'Ubicación desconocida';
     const founded = formatDate(c.start_date) || 'Sin fecha';
     const row = document.createElement('div');
-    row.className = 'result-row';
+    row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
     row.innerHTML = `
-        <div class="result-cover"><img src="${logoUrlCompany(c)}" alt="${c.name}"></div>
-        <div class="result-main">
-            <div class="result-title">${c.name}</div>
-            <div class="result-meta">${countryTxt} · Fundado: ${founded}</div>
+        <div class="result-cover w-16 h-16 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0 flex items-center justify-center"><img src="${logoUrlCompany(c)}" alt="${c.name}" class="w-full h-full object-contain"></div>
+        <div class="result-main flex-1 min-w-0">
+            <div class="result-title text-base font-semibold text-gray-100 truncate">${c.name}</div>
+            <div class="result-meta text-sm text-gray-400">${countryTxt} · Fundado: ${founded}</div>
         </div>
-        <div class="result-rating empty">Compañía</div>
+        <div class="result-rating empty text-[11px] font-semibold px-3 py-1 rounded-full border border-primary text-primary uppercase tracking-wide">Compañía</div>
     `;
     row.addEventListener('click', ()=> window.location.href = `company.html?id=${cid}`);
     return row;
@@ -142,14 +142,14 @@ function buildPlatformRow(p){
     const metaParts = [p.abbreviation || null, family || null, p.generation ? `Gen ${p.generation}` : null].filter(Boolean);
     const meta = metaParts.join(' · ') || 'Hardware';
     const row = document.createElement('div');
-    row.className = 'result-row';
+    row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
     row.innerHTML = `
-        <div class="result-cover"><img src="${logoUrlPlatform(p)}" alt="${p.name}"></div>
-        <div class="result-main">
-            <div class="result-title">${p.name}</div>
-            <div class="result-meta">${meta}</div>
+        <div class="result-cover w-16 h-16 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0 flex items-center justify-center"><img src="${logoUrlPlatform(p)}" alt="${p.name}" class="w-full h-full object-contain"></div>
+        <div class="result-main flex-1 min-w-0">
+            <div class="result-title text-base font-semibold text-gray-100 truncate">${p.name}</div>
+            <div class="result-meta text-sm text-gray-400">${meta}</div>
         </div>
-        <div class="result-rating empty">Consola</div>
+        <div class="result-rating empty text-[11px] font-semibold px-3 py-1 rounded-full border border-primary text-primary uppercase tracking-wide">Consola</div>
     `;
     row.addEventListener('click', ()=> window.location.href = `platform.html?id=${pid}`);
     return row;
@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const page = resp.page || pageParam;
                 const prevBtn = document.createElement('button');
                 prevBtn.textContent = 'Anterior';
+                prevBtn.className = 'px-4 py-2 rounded-lg border border-border bg-panel text-gray-200 hover:border-primary transition disabled:opacity-50';
                 prevBtn.disabled = page <= 1;
                 prevBtn.addEventListener('click', ()=>{
                     const params = new URLSearchParams(window.location.search);
@@ -205,6 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 const nextBtn = document.createElement('button');
                 nextBtn.textContent = 'Siguiente';
+                nextBtn.className = 'px-4 py-2 rounded-lg border border-border bg-panel text-gray-200 hover:border-primary transition disabled:opacity-50';
                 nextBtn.disabled = !hasMore;
                 nextBtn.addEventListener('click', ()=>{
                     const params = new URLSearchParams(window.location.search);
@@ -214,6 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 pager.appendChild(prevBtn);
                 pager.appendChild(nextBtn);
                 pager.style.display = 'flex';
+                pager.className = 'results-pager flex items-center gap-3';
             }
         }catch(e){
             console.error('Category results fetch error', e);

@@ -47,14 +47,14 @@ function renderList(list, empty, summary, kind, games){
     games.forEach(g => {
         const gid = g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase());
         const row = document.createElement('div');
-        row.className = 'result-row';
+        row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
         row.innerHTML = `
-            <div class="result-cover"><img src="${coverUrl(g)}" alt="${g.name}"></div>
-            <div class="result-main">
-                <div class="result-title">${g.name}</div>
-                <div class="result-meta">${g.first_release_date ? formatDate(g.first_release_date) : ''}</div>
+            <div class="result-cover w-16 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0"><img src="${coverUrl(g)}" alt="${g.name}" class="w-full h-full object-cover"></div>
+            <div class="result-main flex-1 min-w-0">
+                <div class="result-title text-base font-semibold text-gray-100 truncate">${g.name}</div>
+                <div class="result-meta text-sm text-gray-400">${g.first_release_date ? formatDate(g.first_release_date) : ''}</div>
             </div>
-            <div class="result-rating ${g.rating ? '' : 'empty'}">${g.rating ? g.rating.toFixed(1) : 'N/A'}</div>
+            <div class="result-rating ${g.rating ? '' : 'empty'} text-sm font-semibold px-3 py-1 rounded-full border ${g.rating ? 'border-primary text-primary' : 'border-border text-gray-400'}">${g.rating ? g.rating.toFixed(1) : 'N/A'}</div>
         `;
         row.addEventListener('click', ()=> window.location.href = `game.html?id=${gid}`);
         list.appendChild(row);

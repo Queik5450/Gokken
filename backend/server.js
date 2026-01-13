@@ -1,6 +1,5 @@
 const path = require('path');
 const dotenv = require('dotenv');
-// Load env from backend/.env first, then fall back to repo root if needed
 dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
@@ -8,12 +7,11 @@ const axios = require('axios');
 const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Allows your frontend to talk to this server
+app.use(cors());
 
 let accessToken = null;
 let tokenExpiry = 0;
 
-// Helper to get/refresh token
 async function getAccessToken() {
     if (!process.env.IGDB_CLIENT_ID || !process.env.IGDB_CLIENT_SECRET) {
         throw new Error('Missing IGDB_CLIENT_ID or IGDB_CLIENT_SECRET');
@@ -24,12 +22,10 @@ async function getAccessToken() {
     const response = await axios.post(url);
     
     accessToken = response.data.access_token;
-    // Set expiry slightly before actual expiry (expires_in is in seconds)
     tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000; 
     return accessToken;
 }
 
-// Generic IGDB POST helper
 async function igdbQuery(resource, query) {
     const token = await getAccessToken();
     const response = await axios({
@@ -62,7 +58,6 @@ app.get('/api/top-games', async (req, res) => {
     }
 });
 
-// Games released in the last N days (default 15)
 app.get('/api/games/recent', async (req, res) => {
     try {
         const windowDays = Number(req.query.days || 15);
@@ -84,7 +79,6 @@ app.get('/api/games/recent', async (req, res) => {
     }
 });
 
-// Games releasing in the next N days (default 15)
 app.get('/api/games/upcoming', async (req, res) => {
     try {
         const windowDays = Number(req.query.days || 15);
@@ -106,12 +100,10 @@ app.get('/api/games/upcoming', async (req, res) => {
     }
 });
 
-// Featured companies with average rating computed from their games
 app.get('/api/companies', async (req, res) => {
     try {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
 
-        // Grab companies that have a logo so we can render them nicely
         const companies = await igdbQuery('companies', `
             fields id, name, slug, logo.image_id;
             where logo != null;
@@ -123,7 +115,6 @@ app.get('/api/companies', async (req, res) => {
         const ratingMap = {};
 
         if (ids.length) {
-            // Fetch games associated with these companies to compute avg ratings
             const games = await igdbQuery('games', `
                 fields rating, involved_companies.company;
                 where rating != null & involved_companies.company = (${ids.join(',')});
@@ -133,7 +124,7 @@ app.get('/api/companies', async (req, res) => {
             games.forEach(game => {
                 if (!game.rating || !Array.isArray(game.involved_companies)) return;
                 game.involved_companies.forEach(ic => {
-                    const cid = ic && (ic.company || ic); // IGDB may return nested or raw ids
+                    const cid = ic && (ic.company || ic);
                     if (!cid) return;
                     if (!ratingMap[cid]) ratingMap[cid] = { sum: 0, count: 0 };
                     ratingMap[cid].sum += game.rating;
@@ -162,7 +153,6 @@ app.get('/api/companies', async (req, res) => {
     }
 });
 
-// Company detail with games and average rating
 app.get('/api/company', async (req, res) => {
     try {
         const id = req.query.id ? Number(req.query.id) : null;
@@ -201,7 +191,6 @@ app.get('/api/company', async (req, res) => {
     }
 });
 
-// Search games by text
 app.get('/api/search/games', async (req, res) => {
     try {
         const q = (req.query.q || '').trim();
@@ -217,12 +206,10 @@ app.get('/api/search/games', async (req, res) => {
         res.json(data);
     } catch (error) {
         console.error('Search games failed', error?.response?.data || error.message || error);
-        // Graceful degrade: return empty array so UI keeps working
         res.status(200).json([]);
     }
 });
 
-// Search companies by text
 app.get('/api/search/companies', async (req, res) => {
     try {
         const q = (req.query.q || '').trim();
@@ -235,7 +222,6 @@ app.get('/api/search/companies', async (req, res) => {
             limit ${limit};
         `);
 
-        // Fallback: partial name match if search returns nothing
         if(!data || data.length === 0){
             data = await igdbQuery('companies', `
                 fields id, name, slug, logo.image_id, country, start_date;
@@ -247,12 +233,10 @@ app.get('/api/search/companies', async (req, res) => {
         res.json(data);
     } catch (error) {
         console.error('Search companies failed', error?.response?.data || error.message || error);
-        // Graceful degrade: return empty array so UI keeps working
         res.status(200).json([]);
     }
 });
 
-// Search platforms/consoles by text
 app.get('/api/search/platforms', async (req, res) => {
     try {
         const q = (req.query.q || '').trim();
@@ -269,12 +253,10 @@ app.get('/api/search/platforms', async (req, res) => {
         res.json(data);
     } catch (error) {
         console.error('Search platforms failed', error?.response?.data || error.message || error);
-        // Graceful degrade: return empty array so UI keeps working
         res.status(200).json([]);
     }
 });
 
-// Combined search returning games, companies, and platforms
 app.get('/api/search/all', async (req, res) => {
     try {
         const q = (req.query.q || '').trim();
@@ -312,12 +294,10 @@ app.get('/api/search/all', async (req, res) => {
         res.json({ games, companies: companiesFinal, platforms });
     } catch (error) {
         console.error('Search all failed', error?.response?.data || error.message || error);
-        // Graceful degrade: return empty collections so UI keeps working
         res.status(200).json({ games: [], companies: [], platforms: [] });
     }
 });
 
-// Games by genre id with paging (default 30)
 app.get('/api/games/by-genre', async (req, res) => {
     try {
         const genreId = req.query.id ? Number(req.query.id) : null;
@@ -343,7 +323,6 @@ app.get('/api/games/by-genre', async (req, res) => {
     }
 });
 
-// Games by platform id with paging (default 30)
 app.get('/api/games/by-platform', async (req, res) => {
     try {
         const platformId = req.query.id ? Number(req.query.id) : null;
@@ -369,12 +348,11 @@ app.get('/api/games/by-platform', async (req, res) => {
     }
 });
 
-// Gaming-related events (upcoming + recent)
 app.get('/api/events', async (req, res) => {
     try {
         const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
         const now = Math.floor(Date.now() / 1000);
-        const windowPast = now - (30 * 86400); // allow events from last 30 days
+        const windowPast = now - (30 * 86400);
 
         const events = await igdbQuery('events', `
             fields name, slug, start_time, end_time, event_logo.image_id, description, url;
@@ -390,7 +368,6 @@ app.get('/api/events', async (req, res) => {
     }
 });
 
-// Gaming news (latest pulse items)
 app.get('/api/news', async (req, res) => {
     try {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
@@ -403,12 +380,10 @@ app.get('/api/news', async (req, res) => {
         res.json(pulses || []);
     } catch (error) {
         console.error('Fetch news failed', error?.response?.data || error.message || error);
-        // graceful: return empty list
         res.status(200).json([]);
     }
 });
 
-// Game detail by id or name slug
 app.get('/api/game', async (req, res) => {
     try {
         const id = req.query.id ? Number(req.query.id) : null;
@@ -454,7 +429,6 @@ app.get('/api/game', async (req, res) => {
     }
 });
 
-// Platform detail by id or slug
 app.get('/api/platform', async (req, res) => {
     try {
         const id = req.query.id ? Number(req.query.id) : null;
@@ -463,7 +437,7 @@ app.get('/api/platform', async (req, res) => {
 
         const where = id ? `where id = ${id};` : `where slug = "${slug}";`;
         const platforms = await igdbQuery('platforms', `
-            fields name, slug, abbreviation, summary, generation, platform_logo.image_id, platform_family.name, category, websites.url, websites.category;
+            fields id, name, slug, abbreviation, summary, generation, platform_logo.image_id, platform_family.name, category, websites.url, websites.category;
             ${where}
             limit 1;
         `);

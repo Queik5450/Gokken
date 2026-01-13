@@ -4,68 +4,92 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Top 100 - Gokken</title>
-  <link rel="stylesheet" href="../css/global.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#ff0000',
+            surface: '#0f0f0f',
+            panel: '#141414',
+            border: '#1f1f1f'
+          },
+          fontFamily: {
+            sans: ['Roboto', 'ui-sans-serif', 'system-ui']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../css/common.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-  <header>
-    <div class="header-container">
-      <div class="logo"><a class="logo-btn" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
-      <div class="search-bar"><div class="search-input-wrapper"><input placeholder="Buscar"><i class="fas fa-search"></i></div></div>
-      <div class="menu-icon"><i class="fas fa-bars"></i></div>
+<body class="bg-neutral-950 text-gray-100 font-sans">
+  <header class="bg-surface/80 backdrop-blur border-b border-border">
+    <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
+      <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
+      <div class="search-bar flex-1">
+        <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
+          <input placeholder="Buscar" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
+          <i class="fas fa-search text-primary"></i>
+        </div>
+      </div>
+      <div class="menu-icon text-primary text-2xl"><i class="fas fa-bars"></i></div>
     </div>
   </header>
 
-  <section class="top100-hero">
-    <img src="https://placehold.co/1600x420/222/fff?text=Top+100+Hero" alt="Top 100">
+  <section class="relative w-full bg-gradient-to-b from-surface via-surface/90 to-neutral-950">
+    <div class="absolute inset-0" style="background-image:url('https://placehold.co/1600x420/222/fff?text=Top+100+Hero'); background-size:cover; background-position:center; opacity:0.25;"></div>
+    <div class="relative max-w-6xl mx-auto px-4 py-14 flex flex-col gap-4">
+      <span class="inline-flex w-max px-3 py-1 rounded-full border border-primary text-primary text-xs font-semibold uppercase tracking-wide bg-black/30">Ranking</span>
+      <h1 class="text-3xl md:text-4xl font-bold leading-tight">Top 100 videojuegos</h1>
+      <p class="text-gray-300 max-w-3xl">Descubre los mejores juegos de todos los tiempos, combinando las valoraciones de usuarios, Metacritic y nuestros analistas. La lista se actualiza cada 24h.</p>
+    </div>
   </section>
 
-  <main class="section-padding">
-    <section class="top100-intro">
-      <h2>Ranking de los mejores videojuegos</h2>
-      <p>Aquí encontrarás los mejores juegos de todos los tiempos, valorados según la opinión de los usuarios, de metacritic o de nuestros analistas por orden de puntuación.</p>
-      <p>Este Top de videojuegos está constantemente actualizado cada 24h. Se hace haciendo una nota media entre la nota de nuestras análisis, la de Metacritic y la de los usuarios.</p>
-    </section>
+  <main class="pt-6 pb-10">
+    <div class="max-w-6xl mx-auto px-4 space-y-8">
+      <section class="bg-panel border border-border rounded-2xl p-5 grid gap-4 md:grid-cols-4">
+        <div class="filter-group flex flex-col gap-2">
+          <label class="text-sm text-gray-300">Plataformas</label>
+          <select id="fPlatform" disabled class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200 disabled:opacity-60">
+            <option value="all">Todas</option>
+          </select>
+        </div>
+        <div class="filter-group flex flex-col gap-2">
+          <label class="text-sm text-gray-300">Género</label>
+          <select id="fGenre" disabled class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200 disabled:opacity-60">
+            <option value="all">Todos</option>
+          </select>
+        </div>
+        <div class="filter-group flex flex-col gap-2">
+          <label class="text-sm text-gray-300">Nota media</label>
+          <select id="fRating" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200">
+            <option value="all">Todas</option>
+            <option value="90">≥ 9.0</option>
+            <option value="80">≥ 8.0</option>
+            <option value="70">≥ 7.0</option>
+          </select>
+        </div>
+        <div class="filter-group flex flex-col gap-2">
+          <label class="text-sm text-gray-300">Fecha de lanzamiento</label>
+          <select id="fRelease" disabled class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200 disabled:opacity-60">
+            <option value="all">Todas</option>
+          </select>
+        </div>
+      </section>
 
-    <section class="top100-filters">
-      <div class="filter-group">
-        <label>Plataformas</label>
-        <select id="fPlatform" disabled>
-          <option value="all">Todas</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Género</label>
-        <select id="fGenre" disabled>
-          <option value="all">Todos</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Nota media</label>
-        <select id="fRating">
-          <option value="all">Todas</option>
-          <option value="90">≥ 9.0</option>
-          <option value="80">≥ 8.0</option>
-          <option value="70">≥ 7.0</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Fecha de lanzamiento</label>
-        <select id="fRelease" disabled>
-          <option value="all">Todas</option>
-        </select>
-      </div>
-    </section>
-
-    <section id="top100List" class="top100-list"></section>
+      <section id="top100List" class="top100-list space-y-3"></section>
+    </div>
   </main>
 
-  <footer>
-    <div class="footer-content">
-      <div class="contact-social"><span>Contactos</span><div class="social-icons"><i class="fab fa-discord"></i></div></div>
-      <div class="footer-info"><span>Acerca de: xxxxx</span></div>
+  <footer class="bg-panel border-t border-border">
+    <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
+      <div class="contact-social flex items-center gap-3"><span class="font-semibold">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
+      <div class="footer-info">Acerca de: xxxxx</div>
     </div>
   </footer>
 

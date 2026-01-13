@@ -4,150 +4,156 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gokken</title>
-    <link rel="stylesheet" href="../css/global.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+        theme: {
+            extend: {
+            colors: {
+                primary: '#ff0000',
+                surface: '#0f0f0f',
+                panel: '#141414',
+                border: '#1f1f1f'
+            },
+            fontFamily: {
+                sans: ['Roboto', 'ui-sans-serif', 'system-ui']
+            }
+            }
+        }
+        }
+    </script>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/mainPage.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-    <!-- Header -->
-    <header>
-        <div class="header-container">
-            <div class="logo">
-                <a class="logo-btn" href="mainPage.html" aria-label="Ir a la página principal">Gokken</a>
+<body class="bg-neutral-950 text-gray-100 font-sans">
+    <header class="bg-surface/80 backdrop-blur border-b border-border relative z-20">
+        <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
+            <div class="logo text-xl font-bold">
+                <a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Ir a la página principal">Gokken</a>
             </div>
-            <div class="search-bar">
-                <div class="search-input-wrapper">
-                    <input type="text" placeholder="Buscar">
-                    <i class="fas fa-search"></i>
+            <div class="search-bar flex-1">
+                <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
+                    <input class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400" type="text" placeholder="Buscar">
+                    <i class="fas fa-search text-primary"></i>
                 </div>
             </div>
-            <div class="menu-icon">
+            <div class="menu-icon text-primary text-2xl">
                 <i class="fas fa-bars"></i>
             </div>
         </div>
     </header>
-
-    <!-- Hero Carousel -->
-    <section class="hero">
-        <div class="hero-slide active">
-            <img src="https://placehold.co/1920x600/111/white?text=STAR+WARS+JEDI+FALLEN+ORDER" alt="Hero Image" class="hero-img">
-            <div class="hero-overlay"></div>
+        <section class="hero relative h-[420px] overflow-hidden">
+        <div class="hero-slide active h-full">
+            <img src="https://placehold.co/1920x600/111/white?text=STAR+WARS+JEDI+FALLEN+ORDER" alt="Hero Image" class="hero-img w-full h-full object-cover">
+            <div class="hero-overlay absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/40"></div>
         </div>
-        <button class="hero-nav prev"><i class="fas fa-chevron-left"></i></button>
-        <button class="hero-nav next"><i class="fas fa-chevron-right"></i></button>
-        <div class="hero-dots">
-            <span class="dot active"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
+        <button class="hero-nav prev absolute left-0 top-1/2 -translate-y-1/2 text-3xl text-primary px-4"><i class="fas fa-chevron-left"></i></button>
+        <button class="hero-nav next absolute right-0 top-1/2 -translate-y-1/2 text-3xl text-primary px-4"><i class="fas fa-chevron-right"></i></button>
+        <div class="hero-dots absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+            <span class="dot active w-3 h-3 rounded-full bg-white border border-neutral-900"></span>
+            <span class="dot w-3 h-3 rounded-full bg-gray-500"></span>
+            <span class="dot w-3 h-3 rounded-full bg-gray-500"></span>
+            <span class="dot w-3 h-3 rounded-full bg-gray-500"></span>
         </div>
     </section>
 
-    <!-- Top 100 -->
-    <section class="top-100 section-padding">
-        <div class="list-header">
-            <h2 class="section-title">TOP 100</h2>
-            <a href="top100.html" class="see-more">Ver todos <i class="fas fa-chevron-right"></i></a>
+    <section class="top-100 section-padding max-w-6xl mx-auto px-4 py-10 space-y-4">
+        <div class="list-header flex items-center justify-between border-l-4 border-primary pl-4">
+            <h2 class="section-title text-2xl font-bold">TOP 100</h2>
+            <a href="top100.html" class="see-more text-primary flex items-center gap-1">Ver todos <i class="fas fa-chevron-right"></i></a>
         </div>
-        <div class="carousel-wrapper">
-            <button class="carousel-nav left"><i class="fas fa-chevron-left"></i></button>
-            <div class="game-cards-container">
-                <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=Game+1" alt="Game 1">
-                    <div class="game-title">Game 1</div>
+        <div class="carousel-wrapper relative">
+            <button class="carousel-nav left absolute left-0 top-1/2 -translate-y-1/2 z-10 text-2xl text-primary"><i class="fas fa-chevron-left"></i></button>
+            <div class="game-cards-container flex gap-4 overflow-x-auto pb-2">
+                <div class="game-card min-w-[180px] bg-panel border border-border rounded-lg overflow-hidden">
+                    <img class="w-full" src="https://placehold.co/200x280/333/white?text=Game+1" alt="Game 1">
+                    <div class="game-title px-3 py-2 text-center font-semibold">Game 1</div>
                 </div>
-                <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=Game+2" alt="Game 2">
-                    <div class="game-title">Game 2</div>
+                <div class="game-card min-w-[180px] bg-panel border border-border rounded-lg overflow-hidden">
+                    <img class="w-full" src="https://placehold.co/200x280/333/white?text=Game+2" alt="Game 2">
+                    <div class="game-title px-3 py-2 text-center font-semibold">Game 2</div>
                 </div>
-                <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=Game+3" alt="Game 3">
-                    <div class="game-title">Game 3</div>
+                <div class="game-card min-w-[180px] bg-panel border border-border rounded-lg overflow-hidden">
+                    <img class="w-full" src="https://placehold.co/200x280/333/white?text=Game+3" alt="Game 3">
+                    <div class="game-title px-3 py-2 text-center font-semibold">Game 3</div>
                 </div>
-                <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=Game+4" alt="Game 4">
-                    <div class="game-title">Game 4</div>
+                <div class="game-card min-w-[180px] bg-panel border border-border rounded-lg overflow-hidden">
+                    <img class="w-full" src="https://placehold.co/200x280/333/white?text=Game+4" alt="Game 4">
+                    <div class="game-title px-3 py-2 text-center font-semibold">Game 4</div>
                 </div>
-                <div class="game-card">
-                    <img src="https://placehold.co/200x280/333/white?text=Game+5" alt="Game 5">
-                    <div class="game-title">Game 5</div>
+                <div class="game-card min-w-[180px] bg-panel border border-border rounded-lg overflow-hidden">
+                    <img class="w-full" src="https://placehold.co/200x280/333/white?text=Game+5" alt="Game 5">
+                    <div class="game-title px-3 py-2 text-center font-semibold">Game 5</div>
                 </div>
             </div>
-            <button class="carousel-nav right"><i class="fas fa-chevron-right"></i></button>
+            <button class="carousel-nav right absolute right-0 top-1/2 -translate-y-1/2 z-10 text-2xl text-primary"><i class="fas fa-chevron-right"></i></button>
         </div>
     </section>
-
-    <section class="lists-section section-padding">
-        <div class="list-column">
-            <div class="list-header">
-                <h3>Recientes</h3>
-                <a href="releases.html?kind=recent" class="see-more">Ver más <i class="fas fa-chevron-right"></i></a>
+    <section class="lists-section relative max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div class="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-border/70"></div>
+        <div class="list-column space-y-4">
+            <div class="list-header flex items-center justify-between">
+                <h3 class="text-2xl font-semibold">Recientes</h3>
+                <a href="releases.html?kind=recent" class="see-more text-primary flex items-center gap-1 font-semibold">Ver más <i class="fas fa-chevron-right"></i></a>
             </div>
             <div class="list-items" data-list="recent">
-                <div class="list-placeholder">Cargando lanzamientos de los últimos 15 días...</div>
+                <div class="list-placeholder text-gray-400">Cargando lanzamientos de los últimos 15 días...</div>
             </div>
         </div>
-        
-        <div class="vertical-divider"></div>
-
-        <div class="list-column">
-            <div class="list-header">
-                <h3>Próximamente</h3>
-                <a href="releases.html?kind=upcoming" class="see-more">Ver más <i class="fas fa-chevron-right"></i></a>
+        <div class="list-column space-y-4">
+            <div class="list-header flex items-center justify-between">
+                <h3 class="text-2xl font-semibold">Próximamente</h3>
+                <a href="releases.html?kind=upcoming" class="see-more text-primary flex items-center gap-1 font-semibold">Ver más <i class="fas fa-chevron-right"></i></a>
             </div>
             <div class="list-items" data-list="upcoming">
-                <div class="list-placeholder">Cargando lanzamientos de los próximos 15 días...</div>
+                <div class="list-placeholder text-gray-400">Cargando lanzamientos de los próximos 15 días...</div>
             </div>
         </div>
     </section>
-
-    <section class="companies section-padding">
-        <h3 class="section-title">COMPAÑÍAS</h3>
-        <div class="companies-wrapper">
-            <button class="carousel-nav left"><i class="fas fa-chevron-left"></i></button>
-            <div class="companies-list" data-company-list>
-                <div class="company-placeholder">Cargando compañías...</div>
+    <section class="companies section-padding max-w-6xl mx-auto px-4 py-10 space-y-4">
+        <h3 class="section-title text-2xl font-bold border-l-4 border-primary pl-4">COMPAÑÍAS</h3>
+        <div class="companies-wrapper relative">
+            <button class="carousel-nav left absolute left-0 top-1/2 -translate-y-1/2 z-10 text-2xl text-primary"><i class="fas fa-chevron-left"></i></button>
+            <div class="companies-list flex gap-4 overflow-x-auto pb-2" data-company-list>
+                <div class="company-placeholder text-gray-400">Cargando compañías...</div>
             </div>
-            <button class="carousel-nav right"><i class="fas fa-chevron-right"></i></button>
+            <button class="carousel-nav right absolute right-0 top-1/2 -translate-y-1/2 z-10 text-2xl text-primary"><i class="fas fa-chevron-right"></i></button>
         </div>
     </section>
-
-    <section class="events section-padding">
-        <div class="list-header">
-            <h3 class="section-title">EVENTOS / NOTICIAS</h3>
-            <a href="#" class="see-more red-text">Ver todos <i class="fas fa-chevron-right"></i></a>
+    </section>
+    <section class="events section-padding max-w-6xl mx-auto px-4 py-10 space-y-4">
+        <div class="list-header flex items-center justify-between border-l-4 border-primary pl-4">
+            <h3 class="section-title text-2xl font-bold">EVENTOS / NOTICIAS</h3>
+            <a href="#" class="see-more red-text text-primary flex items-center gap-1">Ver todos <i class="fas fa-chevron-right"></i></a>
         </div>
-        <div class="events-grid" data-events-grid>
-            <div class="event-placeholder">Cargando eventos...</div>
+        <div class="events-grid grid gap-4 md:grid-cols-3" data-events-grid>
+            <div class="event-placeholder text-gray-400">Cargando eventos...</div>
         </div>
-        <div class="scroll-indicator">
+        <div class="scroll-indicator flex justify-center text-primary text-lg">
             <i class="fas fa-chevron-down"></i>
         </div>
     </section>
+    </section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="contact-social">
-                <span>Contactos</span>
-                <div class="social-icons">
+    <footer class="bg-panel border-t border-border">
+        <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
+            <div class="contact-social flex items-center gap-3">
+                <span class="font-semibold">Contactos</span>
+                <div class="social-icons flex gap-3 text-xl text-primary">
                     <i class="fab fa-discord"></i>
                     <i class="fab fa-instagram"></i>
                     <i class="fab fa-facebook"></i>
                     <i class="fab fa-twitter"></i>
                 </div>
             </div>
-            <div class="footer-info">
-                <span>Acerca de: xxxxx</span>
-            </div>
-            <div class="footer-info">
-                <span>Address : xxxxx</span>
-            </div>
+            <div class="footer-info">Acerca de: xxxxx</div>
+            <div class="footer-info">Address : xxxxx</div>
         </div>
     </footer>
 
-    <!-- Events Overlay Tab -->
     <div id="eventsOverlay" class="events-overlay hidden" aria-hidden="true">
         <div class="events-backdrop" data-close></div>
         <div class="events-panel">
