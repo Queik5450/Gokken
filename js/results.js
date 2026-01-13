@@ -75,6 +75,22 @@ async function fetchResults(query){
     }
 }
 
+async function fetchGamesByGenre(id, page){
+    const base = apiBase();
+    const url = `${base}/api/games/by-genre?id=${encodeURIComponent(id)}&limit=30&page=${encodeURIComponent(page||1)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+}
+
+async function fetchGamesByPlatform(id, page){
+    const base = apiBase();
+    const url = `${base}/api/games/by-platform?id=${encodeURIComponent(id)}&limit=30&page=${encodeURIComponent(page||1)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+}
+
 function renderSection(list, empty, items, builder){
     if(!list || !empty) return;
     list.innerHTML = '';
@@ -141,6 +157,11 @@ function buildPlatformRow(p){
 
 document.addEventListener('DOMContentLoaded', async () => {
     const q = qs('q') || '';
+    const genreId = qs('genreId');
+    const platformId = qs('platformId');
+    const genreName = qs('genreName');
+    const platformName = qs('platformName');
+    const pageParam = Number(qs('page') || '1') || 1;
     const gamesList = document.getElementById('resultsListGames');
     const gamesEmpty = document.getElementById('resultsEmptyGames');
     const companiesList = document.getElementById('resultsListCompanies');
@@ -148,6 +169,65 @@ document.addEventListener('DOMContentLoaded', async () => {
     const platformsList = document.getElementById('resultsListPlatforms');
     const platformsEmpty = document.getElementById('resultsEmptyPlatforms');
     const summary = document.getElementById('resultsSummary');
+    const pager = document.getElementById('resultsPager');
+    const hideSection = (listEl) => {
+        const section = listEl?.closest('.result-section');
+        if(section) section.style.display = 'none';
+    };
+
+    if(genreId || platformId){
+        hideSection(companiesList);
+        hideSection(companiesEmpty);
+        hideSection(platformsList);
+        hideSection(platformsEmpty);
+        try{
+            const resp = genreId ? await fetchGamesByGenre(genreId, pageParam) : await fetchGamesByPlatform(platformId, pageParam);
+            const games = resp.items || resp;
+            const hasMore = typeof resp.hasMore === 'boolean' ? resp.hasMore : (Array.isArray(games) ? games.length >= 30 : false);
+            if(summary){
+                if(genreId){
+                    summary.textContent = `${games.length} juegos en el género "${genreName || ''}" (página ${resp.page || pageParam})`.trim();
+                }else{
+                    summary.textContent = `${games.length} juegos en la plataforma "${platformName || ''}" (página ${resp.page || pageParam})`.trim();
+                }
+            }
+            renderSection(gamesList, gamesEmpty, games, buildGameRow);
+            if(pager){
+                pager.innerHTML = '';
+                const page = resp.page || pageParam;
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Anterior';
+                prevBtn.disabled = page <= 1;
+                prevBtn.addEventListener('click', ()=>{
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('page', String(page - 1));
+                    window.location.search = params.toString();
+                });
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.disabled = !hasMore;
+                nextBtn.addEventListener('click', ()=>{
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('page', String(page + 1));
+                    window.location.search = params.toString();
+                });
+                pager.appendChild(prevBtn);
+                pager.appendChild(nextBtn);
+                pager.style.display = 'flex';
+            }
+        }catch(e){
+            console.error('Category results fetch error', e);
+            if(summary){
+                summary.textContent = genreId
+                    ? `0 juegos en el género "${genreName || ''}"`
+                    : `0 juegos en la plataforma "${platformName || ''}"`;
+            }
+            renderSection(gamesList, gamesEmpty, [], buildGameRow);
+            if(pager) pager.style.display = 'none';
+        }
+        return;
+    }
+
     if(!q){
         renderSection(gamesList, gamesEmpty, [] , buildGameRow);
         renderSection(companiesList, companiesEmpty, [], buildCompanyRow);

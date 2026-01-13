@@ -229,12 +229,20 @@ app.get('/api/search/companies', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
-        const data = await igdbQuery('companies', `
+        let data = await igdbQuery('companies', `
             fields id, name, slug, logo.image_id, country, start_date;
             search "${q}";
-            where logo != null;
             limit ${limit};
         `);
+
+        // Fallback: partial name match if search returns nothing
+        if(!data || data.length === 0){
+            data = await igdbQuery('companies', `
+                fields id, name, slug, logo.image_id, country, start_date;
+                where name ~ *"${q}"*;
+                limit ${limit};
+            `);
+        }
 
         res.json(data);
     } catch (error) {
@@ -282,7 +290,6 @@ app.get('/api/search/all', async (req, res) => {
             igdbQuery('companies', `
                 fields id, name, slug, logo.image_id, country, start_date;
                 search "${q}";
-                where logo != null;
                 limit ${limit};
             `),
             igdbQuery('platforms', `
@@ -293,11 +300,72 @@ app.get('/api/search/all', async (req, res) => {
             `)
         ]);
 
-        res.json({ games, companies, platforms });
+        let companiesFinal = companies;
+        if((!companies || companies.length === 0) && q){
+            companiesFinal = await igdbQuery('companies', `
+                fields id, name, slug, logo.image_id, country, start_date;
+                where name ~ *"${q}"*;
+                limit ${limit};
+            `);
+        }
+
+        res.json({ games, companies: companiesFinal, platforms });
     } catch (error) {
         console.error('Search all failed', error?.response?.data || error.message || error);
         // Graceful degrade: return empty collections so UI keeps working
         res.status(200).json({ games: [], companies: [], platforms: [] });
+    }
+});
+
+// Games by genre id with paging (default 30)
+app.get('/api/games/by-genre', async (req, res) => {
+    try {
+        const genreId = req.query.id ? Number(req.query.id) : null;
+        const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+        const page = Math.max(Number(req.query.page || 1), 1);
+        if (!genreId) return res.status(400).json({ error: 'Missing genre id' });
+
+        const offset = (page - 1) * limit;
+        const games = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, first_release_date, genres;
+            where genres = (${genreId}) & cover != null;
+            sort rating desc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = games.length > limit;
+        const items = hasMore ? games.slice(0, limit) : games;
+        res.json({ items, hasMore, page, limit });
+    } catch (error) {
+        console.error('Games by genre failed', error?.response?.data || error.message || error);
+        res.status(200).json({ items: [], hasMore: false, page: Number(req.query.page || 1) || 1, limit: Number(req.query.limit || 30) });
+    }
+});
+
+// Games by platform id with paging (default 30)
+app.get('/api/games/by-platform', async (req, res) => {
+    try {
+        const platformId = req.query.id ? Number(req.query.id) : null;
+        const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+        const page = Math.max(Number(req.query.page || 1), 1);
+        if (!platformId) return res.status(400).json({ error: 'Missing platform id' });
+
+        const offset = (page - 1) * limit;
+        const games = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, first_release_date, platforms;
+            where platforms = (${platformId}) & cover != null;
+            sort rating desc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = games.length > limit;
+        const items = hasMore ? games.slice(0, limit) : games;
+        res.json({ items, hasMore, page, limit });
+    } catch (error) {
+        console.error('Games by platform failed', error?.response?.data || error.message || error);
+        res.status(200).json({ items: [], hasMore: false, page: Number(req.query.page || 1) || 1, limit: Number(req.query.limit || 30) });
     }
 });
 
@@ -365,9 +433,10 @@ app.get('/api/game', async (req, res) => {
                 screenshots.image_id,
                 artworks.image_id,
                 videos.video_id,
-                genres.name,
-                platforms.name,
+                genres.id, genres.name,
+                platforms.id, platforms.name,
                 involved_companies.company.name,
+                language_supports.language.name,
                 first_release_date,
                 release_dates.human;
             ${whereOrSearch}

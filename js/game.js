@@ -73,9 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const rating100 = Number(game.rating || 0);
   const rating10 = rating100 ? (rating100/10).toFixed(1) : 'N/A';
   const companies = (game.involved_companies||[]).map(ic=>ic.company?.name).filter(Boolean);
-  const genres = (game.genres||[]).map(g=>g.name);
-  const platforms = (game.platforms||[]).map(p=>p.name);
+  const genres = (game.genres||[]).map(g=>({ id:g.id, name:g.name })).filter(g=>g.name);
+  const platforms = (game.platforms||[]).map(p=>({ id:p.id, name:p.name })).filter(p=>p.name);
+  const languageSupports = Array.from(new Set((game.language_supports||[]).map(ls=>ls.language?.name).filter(Boolean)));
   const releaseHuman = (game.release_dates?.[0]?.human) || (game.first_release_date ? new Date(game.first_release_date*1000).toLocaleDateString('es-ES') : 'N/D');
+  const releaseTsMs = game.first_release_date ? game.first_release_date * 1000 : null;
+  const isFutureRelease = releaseTsMs && releaseTsMs > Date.now();
   const screenshots = (game.screenshots||[]).slice(0,8);
   const artworks = (game.artworks||[]).slice(0,4);
   const videoId = (game.videos||[])[0]?.video_id || '';
@@ -103,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div><span>Compañía</span>${companies.join(', ')||'N/D'}</div>
             <div><span>Lanzado el</span>${releaseHuman}</div>
           </div>
+          ${isFutureRelease ? `<div class="release-countdown" id="releaseCountdown"></div>` : ''}
         </div>
       </section>
 
@@ -121,11 +125,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="info-grid">
             <div>
               <div class="stat-label">Géneros</div>
-              <div class="pill-row">${genres.map(g=>`<span class="pill">${g}</span>`).join('') || '<span class="pill">N/D</span>'}</div>
+              <div class="pill-row">${genres.map(g=>{
+                const query = g.id ? `genreId=${g.id}&genreName=${encodeURIComponent(g.name)}` : `q=${encodeURIComponent(g.name)}`;
+                return `<a class="pill pill-link" href="results.html?${query}">${g.name}</a>`;
+              }).join('') || '<span class="pill">N/D</span>'}</div>
             </div>
             <div>
               <div class="stat-label">Plataformas</div>
-              <div class="pill-row">${platforms.map(p=>`<span class="pill">${p}</span>`).join('') || '<span class="pill">N/D</span>'}</div>
+              <div class="pill-row">${platforms.map(p=>{
+                const query = p.id ? `platformId=${p.id}&platformName=${encodeURIComponent(p.name)}` : `q=${encodeURIComponent(p.name)}`;
+                return `<a class="pill pill-link" href="results.html?${query}">${p.name}</a>`;
+              }).join('') || '<span class="pill">N/D</span>'}</div>
             </div>
             <div class="stat-box">
               <div class="stat-label">Calificación</div>
@@ -134,6 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="stat-box">
               <div class="stat-label">Clasificación</div>
               <div class="badge-class">${rating100 >= 180 ? '18' : '18'}</div>
+            </div>
+          </div>
+          <div class="info-block">
+            <h4>Idiomas</h4>
+            <div class="pill-row">
+              ${languageSupports.map(lang=>`<span class="pill">${lang}</span>`).join('') || '<span class="pill">N/D</span>'}
             </div>
           </div>
         </div>
@@ -145,6 +161,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       </section>
     </div>
   `;
+
+  if(isFutureRelease){
+    const cdEl = document.getElementById('releaseCountdown');
+    const formatCountdown = (ms)=>{
+      const totalSeconds = Math.max(0, Math.floor(ms/1000));
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      if(days > 0) return `${days}d ${hours}h ${minutes}m`;
+      if(hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+      return `${minutes}m ${seconds}s`;
+    };
+    const tick = ()=>{
+      if(!cdEl) return;
+      const now = Date.now();
+      const diff = releaseTsMs - now;
+      if(diff <= 0){
+        cdEl.textContent = 'Lanza hoy';
+        return true;
+      }
+      cdEl.textContent = `Lanza en ${formatCountdown(diff)}`;
+      return false;
+    };
+    let stop = tick();
+    if(!stop){
+      const timer = setInterval(()=>{
+        if(tick()) clearInterval(timer);
+      }, 1000);
+    }
+  }
 
   const mainEl = document.getElementById('mainMedia');
   const thumbEls = root.querySelectorAll('.thumb');
