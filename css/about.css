@@ -1,0 +1,107 @@
+.about-hero {
+    background: radial-gradient(800px 260px at 20% 30%, rgba(255, 0, 0, 0.18), transparent 65%),
+        radial-gradient(800px 260px at 80% 40%, rgba(255, 255, 255, 0.08), transparent 65%),
+        linear-gradient(180deg, rgba(15, 15, 15, 0.85), rgba(0, 0, 0, 0.9));
+}
+
+.about-hero-bg {
+    background-image: url('https://placehold.co/1600x520/111/fff?text=Gokken+About');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15;
+}
+
+.about-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 16px;
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    background: rgba(15, 15, 15, 0.45);
+}
+
+.about-card-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    border: 1px solid #1f1f1f;
+    background: #0f0f0f;
+    color: #ff0000;
+    flex: 0 0 auto;
+}
+
+.tech-card {
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    background: #141414;
+    padding: 18px;
+}
+
+.tech-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.tech-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+    color: #d1d5db;
+}
+
+.tech-list li {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+}
+
+.tech-list li::before {
+    content: '•';
+    color: #ff0000;
+    font-weight: 800;
+}
+
+.member-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    background: rgba(20, 20, 20, 0.9);
+}
+
+.member-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: #0f0f0f;
+    border: 1px solid #1f1f1f;
+    color: #ff0000;
+    flex: 0 0 auto;
+}
+
+.member-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.member-name {
+    font-weight: 800;
+    color: #fff;
+}
+
+.member-role {
+    color: #9ca3af;
+    font-size: 0.95rem;
+}

@@ -23,7 +23,8 @@ function coverUrl(game){
 
 function formatDate(ts){
     if(!ts) return '';
-    return new Date(ts*1000).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+    const locale = window.__GOKKEN_LOCALE__ || 'es-ES';
+    return new Date(ts*1000).toLocaleDateString(locale, { day:'2-digit', month:'short', year:'numeric' });
 }
 
 async function fetchReleases(kind){
@@ -34,15 +35,17 @@ async function fetchReleases(kind){
 }
 
 function renderList(list, empty, summary, kind, games){
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+    const na = tr('common.na', 'N/A');
     if(!list || !empty) return;
     list.innerHTML = '';
     if(!games || !games.length){
         empty.style.display = 'block';
-        if(summary) summary.textContent = `0 resultados`;
+        if(summary) summary.textContent = `0 ${tr('releases.resultsWord', 'resultados')}`;
         return;
     }
     empty.style.display = 'none';
-    if(summary) summary.textContent = `${games.length} resultados`;
+    if(summary) summary.textContent = `${games.length} ${tr('releases.resultsWord', 'resultados')}`;
 
     games.forEach(g => {
         const gid = g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase());
@@ -54,7 +57,7 @@ function renderList(list, empty, summary, kind, games){
                 <div class="result-title text-base font-semibold text-gray-100 truncate">${g.name}</div>
                 <div class="result-meta text-sm text-gray-400">${g.first_release_date ? formatDate(g.first_release_date) : ''}</div>
             </div>
-            <div class="result-rating ${g.rating ? '' : 'empty'} text-sm font-semibold px-3 py-1 rounded-full border ${g.rating ? 'border-primary text-primary' : 'border-border text-gray-400'}">${g.rating ? g.rating.toFixed(1) : 'N/A'}</div>
+            <div class="result-rating ${g.rating ? '' : 'empty'} text-sm font-semibold px-3 py-1 rounded-full border ${g.rating ? 'border-primary text-primary' : 'border-border text-gray-400'}">${g.rating ? g.rating.toFixed(1) : na}</div>
         `;
         row.addEventListener('click', ()=> window.location.href = `game.html?id=${gid}`);
         list.appendChild(row);
@@ -62,6 +65,7 @@ function renderList(list, empty, summary, kind, games){
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
     const kind = (qs('kind') || 'recent').toLowerCase();
     const titleEl = document.getElementById('releaseTitle');
     const list = document.getElementById('releaseList');
@@ -69,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const summary = document.getElementById('releaseSummary');
 
     const isRecent = kind === 'recent';
-    if(titleEl) titleEl.textContent = isRecent ? 'Recientes' : 'Próximamente';
+    if(titleEl) titleEl.textContent = isRecent ? tr('main.recent', 'Recientes') : tr('main.upcoming', 'Próximamente');
 
     try{
         const data = await fetchReleases(isRecent ? 'recent' : 'upcoming');

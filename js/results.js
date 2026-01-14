@@ -32,7 +32,8 @@ function formatDate(ts){
     if(!ts) return '';
     const date = typeof ts === 'number' ? new Date(ts*1000) : new Date(ts);
     if(Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+    const locale = window.__GOKKEN_LOCALE__ || 'es-ES';
+    return date.toLocaleDateString(locale, { day:'2-digit', month:'short', year:'numeric' });
 }
 
 function logoUrlCompany(c){
@@ -103,6 +104,9 @@ function renderSection(list, empty, items, builder){
 }
 
 function buildGameRow(g){
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+    const na = tr('common.na', 'N/A');
+    const noDate = tr('common.noDate', 'Sin fecha');
     const gid = g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase());
     const row = document.createElement('div');
     row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
@@ -110,37 +114,43 @@ function buildGameRow(g){
         <div class="result-cover w-16 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0"><img src="${coverUrl(g)}" alt="${g.name}" class="w-full h-full object-cover"></div>
         <div class="result-main flex-1 min-w-0">
             <div class="result-title text-base font-semibold text-gray-100 truncate">${g.name}</div>
-            <div class="result-meta text-sm text-gray-400">${formatDate(g.first_release_date) || 'Sin fecha'}</div>
+            <div class="result-meta text-sm text-gray-400">${formatDate(g.first_release_date) || noDate}</div>
         </div>
-        <div class="result-rating ${g.rating ? '' : 'empty'} text-sm font-semibold px-3 py-1 rounded-full border ${g.rating ? 'border-primary text-primary' : 'border-border text-gray-400'}">${g.rating ? g.rating.toFixed(1) : 'N/A'}</div>
+        <div class="result-rating ${g.rating ? '' : 'empty'} text-sm font-semibold px-3 py-1 rounded-full border ${g.rating ? 'border-primary text-primary' : 'border-border text-gray-400'}">${g.rating ? g.rating.toFixed(1) : na}</div>
     `;
     row.addEventListener('click', ()=> window.location.href = `game.html?id=${gid}`);
     return row;
 }
 
 function buildCompanyRow(c){
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+    const countryCodeLabel = tr('search.countryCodeLabel', 'País código');
+    const unknownLocation = tr('results.unknownLocation', 'Ubicación desconocida');
+    const foundedLabel = tr('results.foundedLabel', 'Fundado');
+    const noDate = tr('common.noDate', 'Sin fecha');
     const cid = c.id || c.slug || '';
-    const countryTxt = c.country ? `País código: ${c.country}` : 'Ubicación desconocida';
-    const founded = formatDate(c.start_date) || 'Sin fecha';
+    const countryTxt = c.country ? `${countryCodeLabel}: ${c.country}` : unknownLocation;
+    const founded = formatDate(c.start_date) || noDate;
     const row = document.createElement('div');
     row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
     row.innerHTML = `
         <div class="result-cover w-16 h-16 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0 flex items-center justify-center"><img src="${logoUrlCompany(c)}" alt="${c.name}" class="w-full h-full object-contain"></div>
         <div class="result-main flex-1 min-w-0">
             <div class="result-title text-base font-semibold text-gray-100 truncate">${c.name}</div>
-            <div class="result-meta text-sm text-gray-400">${countryTxt} · Fundado: ${founded}</div>
+            <div class="result-meta text-sm text-gray-400">${countryTxt} · ${foundedLabel}: ${founded}</div>
         </div>
-        <div class="result-rating empty text-[11px] font-semibold px-3 py-1 rounded-full border border-primary text-primary uppercase tracking-wide">Compañía</div>
+        <div class="result-rating empty text-[11px] font-semibold px-3 py-1 rounded-full border border-primary text-primary uppercase tracking-wide">${tr('search.tagCompany','Compañía')}</div>
     `;
     row.addEventListener('click', ()=> window.location.href = `company.html?id=${cid}`);
     return row;
 }
 
 function buildPlatformRow(p){
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
     const pid = p.id || p.slug || '';
     const family = p.platform_family ? p.platform_family.name : '';
     const metaParts = [p.abbreviation || null, family || null, p.generation ? `Gen ${p.generation}` : null].filter(Boolean);
-    const meta = metaParts.join(' · ') || 'Hardware';
+    const meta = metaParts.join(' · ') || tr('results.hardwareDefault', 'Hardware');
     const row = document.createElement('div');
     row.className = 'result-row flex items-center gap-4 bg-panel border border-border rounded-xl p-3 hover:border-primary transition cursor-pointer';
     row.innerHTML = `
@@ -149,13 +159,14 @@ function buildPlatformRow(p){
             <div class="result-title text-base font-semibold text-gray-100 truncate">${p.name}</div>
             <div class="result-meta text-sm text-gray-400">${meta}</div>
         </div>
-        <div class="result-rating empty text-[11px] font-semibold px-3 py-1 rounded-full border border-primary text-primary uppercase tracking-wide">Consola</div>
+        <div class="result-rating empty text-[11px] font-semibold px-3 py-1 rounded-full border border-primary text-primary uppercase tracking-wide">${tr('search.tagPlatform','Consola')}</div>
     `;
     row.addEventListener('click', ()=> window.location.href = `platform.html?id=${pid}`);
     return row;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
     const q = qs('q') || '';
     const genreId = qs('genreId');
     const platformId = qs('platformId');
@@ -186,9 +197,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const hasMore = typeof resp.hasMore === 'boolean' ? resp.hasMore : (Array.isArray(games) ? games.length >= 30 : false);
             if(summary){
                 if(genreId){
-                    summary.textContent = `${games.length} juegos en el género "${genreName || ''}" (página ${resp.page || pageParam})`.trim();
+                    const page = resp.page || pageParam;
+                    if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                        summary.textContent = `${games.length} games in genre "${genreName || ''}" (page ${page})`.trim();
+                    }else{
+                        summary.textContent = `${games.length} juegos en el género "${genreName || ''}" (página ${page})`.trim();
+                    }
                 }else{
-                    summary.textContent = `${games.length} juegos en la plataforma "${platformName || ''}" (página ${resp.page || pageParam})`.trim();
+                    const page = resp.page || pageParam;
+                    if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                        summary.textContent = `${games.length} games on platform "${platformName || ''}" (page ${page})`.trim();
+                    }else{
+                        summary.textContent = `${games.length} juegos en la plataforma "${platformName || ''}" (página ${page})`.trim();
+                    }
                 }
             }
             renderSection(gamesList, gamesEmpty, games, buildGameRow);
@@ -196,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 pager.innerHTML = '';
                 const page = resp.page || pageParam;
                 const prevBtn = document.createElement('button');
-                prevBtn.textContent = 'Anterior';
+                prevBtn.textContent = tr('common.prev', 'Anterior');
                 prevBtn.className = 'px-4 py-2 rounded-lg border border-border bg-panel text-gray-200 hover:border-primary transition disabled:opacity-50';
                 prevBtn.disabled = page <= 1;
                 prevBtn.addEventListener('click', ()=>{
@@ -205,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     window.location.search = params.toString();
                 });
                 const nextBtn = document.createElement('button');
-                nextBtn.textContent = 'Siguiente';
+                nextBtn.textContent = tr('common.next', 'Siguiente');
                 nextBtn.className = 'px-4 py-2 rounded-lg border border-border bg-panel text-gray-200 hover:border-primary transition disabled:opacity-50';
                 nextBtn.disabled = !hasMore;
                 nextBtn.addEventListener('click', ()=>{
@@ -221,9 +242,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }catch(e){
             console.error('Category results fetch error', e);
             if(summary){
-                summary.textContent = genreId
-                    ? `0 juegos en el género "${genreName || ''}"`
-                    : `0 juegos en la plataforma "${platformName || ''}"`;
+                if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                    summary.textContent = genreId
+                        ? `0 games in genre "${genreName || ''}"`
+                        : `0 games on platform "${platformName || ''}"`;
+                }else{
+                    summary.textContent = genreId
+                        ? `0 juegos en el género "${genreName || ''}"`
+                        : `0 juegos en la plataforma "${platformName || ''}"`;
+                }
             }
             renderSection(gamesList, gamesEmpty, [], buildGameRow);
             if(pager) pager.style.display = 'none';
@@ -243,7 +270,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const g = results.games?.length || 0;
             const c = results.companies?.length || 0;
             const p = results.platforms?.length || 0;
-            summary.textContent = `${g} juegos · ${c} compañías · ${p} consolas para "${q}"`;
+            if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                summary.textContent = `${g} games · ${c} companies · ${p} consoles for "${q}"`;
+            }else{
+                summary.textContent = `${g} juegos · ${c} compañías · ${p} consolas para "${q}"`;
+            }
         }
         renderSection(gamesList, gamesEmpty, results.games, buildGameRow);
         renderSection(companiesList, companiesEmpty, results.companies, buildCompanyRow);
@@ -251,7 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }catch(e){
         console.error('Results fetch error', e);
         if(summary){
-            summary.textContent = `0 resultados para "${q}"`;
+            summary.textContent = (window.__GOKKEN_LANG__ || 'es') === 'en'
+                ? `0 results for "${q}"`
+                : `0 resultados para "${q}"`;
         }
         renderSection(gamesList, gamesEmpty, [], buildGameRow);
         renderSection(companiesList, companiesEmpty, [], buildCompanyRow);

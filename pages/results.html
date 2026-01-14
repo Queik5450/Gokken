@@ -30,52 +30,60 @@
 <body class="bg-neutral-950 text-gray-100 font-sans">
         <header class="bg-surface/80 backdrop-blur border-b border-border">
             <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
-                <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
+                <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal" data-i18n-aria-label="header.homeAria">Gokken</a></div>
                 <div class="search-bar flex-1">
                     <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
-                        <input type="text" placeholder="Buscar" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
+                        <input type="text" placeholder="Buscar" data-i18n-placeholder="search.placeholder" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
                         <i class="fas fa-search text-primary"></i>
                     </div>
                 </div>
-                <div class="menu-icon text-primary text-2xl"><i class="fas fa-bars"></i></div>
+                <div class="flex items-center gap-3">
+                    <div class="menu-icon text-primary text-2xl" title="Menú" data-i18n-title="header.menuTitle"><i class="fas fa-bars"></i></div>
+                    <div class="lang-switch flex items-center gap-1">
+                        <button type="button" data-lang="es" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">ES</button>
+                        <button type="button" data-lang="en" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">EN</button>
+                    </div>
+                </div>
             </div>
         </header>
 
         <main class="pt-6 pb-10">
             <div class="max-w-6xl mx-auto px-4 space-y-8">
                 <div class="flex items-center justify-between flex-wrap gap-3">
-                    <h2 class="text-2xl font-bold">Resultados</h2>
+                    <h2 class="text-2xl font-bold" data-i18n="results.title">Resultados</h2>
                     <div id="resultsSummary" class="results-summary text-sm text-gray-300"></div>
                 </div>
 
                 <section class="result-section space-y-3">
-                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Juegos</h3></div>
+                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold" data-i18n="results.games">Juegos</h3></div>
                     <div id="resultsListGames" class="results-list space-y-3"></div>
-                    <div id="resultsEmptyGames" class="list-placeholder text-gray-400" style="display:none;">Sin juegos</div>
+                    <div id="resultsEmptyGames" class="list-placeholder text-gray-400" style="display:none;" data-i18n="results.emptyGames">Sin juegos</div>
                     <div id="resultsPager" class="results-pager" style="display:none;"></div>
                 </section>
 
                 <section class="result-section space-y-3">
-                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Compañías</h3></div>
+                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold" data-i18n="results.companies">Compañías</h3></div>
                     <div id="resultsListCompanies" class="results-list space-y-3"></div>
-                    <div id="resultsEmptyCompanies" class="list-placeholder text-gray-400" style="display:none;">Sin compañías</div>
+                    <div id="resultsEmptyCompanies" class="list-placeholder text-gray-400" style="display:none;" data-i18n="results.emptyCompanies">Sin compañías</div>
                 </section>
 
                 <section class="result-section space-y-3">
-                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold">Consolas</h3></div>
+                    <div class="flex items-center justify-between"><h3 class="text-lg font-semibold" data-i18n="results.platforms">Consolas</h3></div>
                     <div id="resultsListPlatforms" class="results-list space-y-3"></div>
-                    <div id="resultsEmptyPlatforms" class="list-placeholder text-gray-400" style="display:none;">Sin consolas</div>
+                    <div id="resultsEmptyPlatforms" class="list-placeholder text-gray-400" style="display:none;" data-i18n="results.emptyPlatforms">Sin consolas</div>
                 </section>
             </div>
         </main>
 
         <footer class="bg-panel border-t border-border">
                 <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
-                        <div class="contact-social flex items-center gap-3"><span class="font-semibold">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
-                        <div class="footer-info">Acerca de: xxxxx</div>
+                <div class="contact-social flex items-center gap-3"><span class="font-semibold" data-i18n="footer.contacts">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
+                <div class="footer-info"><span data-i18n="footer.aboutPrefix">Acerca de:</span> <a class="text-primary hover:underline" href="about.html">Gokken</a></div>
+                <div class="footer-info"><span data-i18n="footer.learnPrefix">Aprender:</span> <a class="text-primary hover:underline" href="https://www.gdquest.com" target="_blank" rel="noreferrer noopener" data-i18n="footer.learnLink">Aprender a hacer juegos (ODS 4)</a></div>
                 </div>
         </footer>
 
+        <script src="../js/i18n.js"></script>
     <script src="../js/search.js"></script>
     <script src="../js/results.js"></script>
 </body>

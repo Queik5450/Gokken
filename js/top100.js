@@ -38,6 +38,7 @@ function scoreBadge(r){
 }
 
 function renderList(games){
+  const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
   const root = document.getElementById('top100List');
   if(!root) return;
   root.innerHTML = games.map((g,idx)=>`
@@ -49,7 +50,7 @@ function renderList(games){
       </div>
       <div class="info flex-1 min-w-0">
         <h3 class="name text-base font-semibold text-gray-100 leading-tight truncate">${g.name}</h3>
-        <p class="desc text-sm text-gray-300 leading-relaxed">${g.summary? g.summary : 'Descripción no disponible.'}</p>
+        <p class="desc text-sm text-gray-300 leading-relaxed">${g.summary? g.summary : tr('top100.noDesc','Descripción no disponible.')}</p>
       </div>
     </article>
   `).join('');

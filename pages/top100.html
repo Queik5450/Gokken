@@ -30,23 +30,29 @@
 <body class="bg-neutral-950 text-gray-100 font-sans">
   <header class="bg-surface/80 backdrop-blur border-b border-border">
     <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
-      <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal">Gokken</a></div>
+      <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal" data-i18n-aria-label="header.homeAria">Gokken</a></div>
       <div class="search-bar flex-1">
         <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
-          <input placeholder="Buscar" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
+          <input placeholder="Buscar" data-i18n-placeholder="search.placeholder" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
           <i class="fas fa-search text-primary"></i>
         </div>
       </div>
-      <div class="menu-icon text-primary text-2xl"><i class="fas fa-bars"></i></div>
+      <div class="flex items-center gap-3">
+        <div class="menu-icon text-primary text-2xl" title="Menú" data-i18n-title="header.menuTitle"><i class="fas fa-bars"></i></div>
+        <div class="lang-switch flex items-center gap-1">
+          <button type="button" data-lang="es" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">ES</button>
+          <button type="button" data-lang="en" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">EN</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <section class="relative w-full bg-gradient-to-b from-surface via-surface/90 to-neutral-950">
     <div class="absolute inset-0" style="background-image:url('https://placehold.co/1600x420/222/fff?text=Top+100+Hero'); background-size:cover; background-position:center; opacity:0.25;"></div>
     <div class="relative max-w-6xl mx-auto px-4 py-14 flex flex-col gap-4">
-      <span class="inline-flex w-max px-3 py-1 rounded-full border border-primary text-primary text-xs font-semibold uppercase tracking-wide bg-black/30">Ranking</span>
-      <h1 class="text-3xl md:text-4xl font-bold leading-tight">Top 100 videojuegos</h1>
-      <p class="text-gray-300 max-w-3xl">Descubre los mejores juegos de todos los tiempos, combinando las valoraciones de usuarios, Metacritic y nuestros analistas. La lista se actualiza cada 24h.</p>
+      <span class="inline-flex w-max px-3 py-1 rounded-full border border-primary text-primary text-xs font-semibold uppercase tracking-wide bg-black/30" data-i18n="top100.badge">Ranking</span>
+      <h1 class="text-3xl md:text-4xl font-bold leading-tight" data-i18n="top100.title">Top 100 videojuegos</h1>
+      <p class="text-gray-300 max-w-3xl" data-i18n="top100.intro">Descubre los mejores juegos de todos los tiempos, combinando las valoraciones de usuarios, Metacritic y nuestros analistas. La lista se actualiza cada 24h.</p>
     </div>
   </section>
 
@@ -54,30 +60,30 @@
     <div class="max-w-6xl mx-auto px-4 space-y-8">
       <section class="bg-panel border border-border rounded-2xl p-5 grid gap-4 md:grid-cols-4">
         <div class="filter-group flex flex-col gap-2">
-          <label class="text-sm text-gray-300">Plataformas</label>
+          <label class="text-sm text-gray-300" data-i18n="top100.platforms">Plataformas</label>
           <select id="fPlatform" disabled class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200 disabled:opacity-60">
-            <option value="all">Todas</option>
+            <option value="all" data-i18n="top100.allF">Todas</option>
           </select>
         </div>
         <div class="filter-group flex flex-col gap-2">
-          <label class="text-sm text-gray-300">Género</label>
+          <label class="text-sm text-gray-300" data-i18n="top100.genre">Género</label>
           <select id="fGenre" disabled class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200 disabled:opacity-60">
-            <option value="all">Todos</option>
+            <option value="all" data-i18n="top100.allM">Todos</option>
           </select>
         </div>
         <div class="filter-group flex flex-col gap-2">
-          <label class="text-sm text-gray-300">Nota media</label>
+          <label class="text-sm text-gray-300" data-i18n="top100.avgRating">Nota media</label>
           <select id="fRating" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200">
-            <option value="all">Todas</option>
+            <option value="all" data-i18n="top100.allF">Todas</option>
             <option value="90">≥ 9.0</option>
             <option value="80">≥ 8.0</option>
             <option value="70">≥ 7.0</option>
           </select>
         </div>
         <div class="filter-group flex flex-col gap-2">
-          <label class="text-sm text-gray-300">Fecha de lanzamiento</label>
+          <label class="text-sm text-gray-300" data-i18n="top100.releaseDate">Fecha de lanzamiento</label>
           <select id="fRelease" disabled class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200 disabled:opacity-60">
-            <option value="all">Todas</option>
+            <option value="all" data-i18n="top100.allF">Todas</option>
           </select>
         </div>
       </section>
@@ -88,11 +94,13 @@
 
   <footer class="bg-panel border-t border-border">
     <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
-      <div class="contact-social flex items-center gap-3"><span class="font-semibold">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
-      <div class="footer-info">Acerca de: xxxxx</div>
+      <div class="contact-social flex items-center gap-3"><span class="font-semibold" data-i18n="footer.contacts">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
+      <div class="footer-info"><span data-i18n="footer.aboutPrefix">Acerca de:</span> <a class="text-primary hover:underline" href="about.html">Gokken</a></div>
+        <div class="footer-info"><span data-i18n="footer.learnPrefix">Aprender:</span> <a class="text-primary hover:underline" href="https://www.gdquest.com" target="_blank" rel="noreferrer noopener" data-i18n="footer.learnLink">Aprender a hacer juegos (ODS 4)</a></div>
     </div>
   </footer>
 
+  <script src="../js/i18n.js"></script>
   <script src="../js/search.js"></script>
   <script src="../js/top100.js"></script>
 </body>

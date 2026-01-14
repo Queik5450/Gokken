@@ -1,0 +1,66 @@
+.learn-hero {
+  border-bottom: 1px solid #1f1f1f;
+}
+
+.learn-hero-bg {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 0, 0, 0.25), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.08), transparent 35%),
+    linear-gradient(180deg, rgba(20, 20, 20, 1), rgba(15, 15, 15, 1));
+}
+
+.learn-card {
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid #1f1f1f;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.learn-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.learn-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  color: #d1d5db;
+}
+
+.learn-list li {
+  padding-left: 14px;
+  position: relative;
+}
+
+.learn-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ff0000;
+}
+
+.learn-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 15, 15, 0.7);
+  border: 1px solid #1f1f1f;
+  color: #e5e7eb;
+  text-decoration: none;
+}
+
+.learn-link:hover {
+  border-color: rgba(255, 0, 0, 0.8);
+}

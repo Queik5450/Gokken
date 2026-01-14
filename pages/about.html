@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Acerca de - Gokken</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+        theme: {
+            extend: {
+            colors: {
+                primary: '#ff0000',
+                surface: '#0f0f0f',
+                panel: '#141414',
+                border: '#1f1f1f'
+            },
+            fontFamily: {
+                sans: ['Roboto', 'ui-sans-serif', 'system-ui']
+            }
+            }
+        }
+        }
+    </script>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/about.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-neutral-950 text-gray-100 font-sans">
+    <header class="bg-surface/80 backdrop-blur border-b border-border">
+        <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
+            <div class="logo text-xl font-bold">
+                <a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal" data-i18n-aria-label="header.homeAria">Gokken</a>
+            </div>
+            <div class="search-bar flex-1">
+                <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
+                    <input type="text" placeholder="Buscar" data-i18n-placeholder="search.placeholder" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
+                    <i class="fas fa-search text-primary"></i>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="menu-icon text-primary text-2xl" title="Menú" data-i18n-title="header.menuTitle"><i class="fas fa-bars"></i></div>
+                <div class="lang-switch flex items-center gap-1">
+                    <button type="button" data-lang="es" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">ES</button>
+                    <button type="button" data-lang="en" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">EN</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="about-hero relative overflow-hidden">
+        <div class="absolute inset-0 about-hero-bg"></div>
+        <div class="relative max-w-6xl mx-auto px-4 py-14 space-y-4">
+            <span class="inline-flex w-max px-3 py-1 rounded-full border border-primary text-primary text-xs font-semibold uppercase tracking-wide bg-black/30" data-i18n="about.badge">Proyecto</span>
+            <h1 class="text-3xl md:text-4xl font-bold leading-tight" data-i18n="about.title">Acerca de Gokken</h1>
+            <p class="text-gray-300 max-w-3xl" data-i18n="about.intro">Gokken es una plataforma web para explorar videojuegos: rankings, lanzamientos, compañías, consolas, eventos y noticias. Integra datos de IGDB y agrega noticias reales vía RSS.</p>
+            <div class="flex flex-wrap gap-3 pt-2">
+                <a href="mainPage.html" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:brightness-110 transition">
+                    <i class="fas fa-home"></i>
+                    <span data-i18n="about.backHome">Volver al inicio</span>
+                </a>
+                <a href="#tecnologias" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-panel text-gray-100 hover:border-primary transition">
+                    <i class="fas fa-layer-group text-primary"></i>
+                    <span data-i18n="about.viewTech">Ver tecnologías</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <main class="pt-8 pb-12">
+        <div class="max-w-6xl mx-auto px-4 space-y-10">
+            <section class="bg-panel border border-border rounded-2xl p-6 space-y-3">
+                <h2 class="text-2xl font-bold border-l-4 border-primary pl-4" data-i18n="about.whatIs">¿Qué es Gokken?</h2>
+                <div class="grid gap-4 md:grid-cols-3 pt-2">
+                    <div class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-search"></i></div>
+                        <div>
+                            <h3 class="font-semibold text-lg" data-i18n="about.explorationTitle">Exploración</h3>
+                            <p class="text-gray-300" data-i18n="about.explorationBody">Búsqueda y navegación por juegos, compañías y consolas con resultados rápidos.</p>
+                        </div>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-chart-line"></i></div>
+                        <div>
+                            <h3 class="font-semibold text-lg" data-i18n="about.rankingsTitle">Rankings</h3>
+                            <p class="text-gray-300" data-i18n="about.rankingsBody">Top 100 y listados con filtros, enfocados en descubrir lo mejor.</p>
+                        </div>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card-icon"><i class="fas fa-newspaper"></i></div>
+                        <div>
+                            <h3 class="font-semibold text-lg" data-i18n="about.newsEventsTitle">Noticias y eventos</h3>
+                            <p class="text-gray-300" data-i18n="about.newsEventsBody">Eventos desde IGDB y noticias reales desde RSS (priorizando fuentes en español).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tecnologias" class="space-y-4">
+                <h2 class="text-2xl font-bold border-l-4 border-primary pl-4" data-i18n="about.techTitle">Tecnologías utilizadas</h2>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="tech-card">
+                        <div class="tech-card-header">
+                            <i class="fas fa-code text-primary"></i>
+                            <h3 class="text-lg font-semibold" data-i18n="about.techFrontend">Frontend</h3>
+                        </div>
+                        <ul class="tech-list">
+                            <li data-i18n="about.techFrontend1">HTML5 + CSS3</li>
+                            <li data-i18n="about.techFrontend2">JavaScript (Vanilla)</li>
+                            <li data-i18n="about.techFrontend3">Tailwind CSS (CDN) + estilos propios</li>
+                            <li data-i18n="about.techFrontend4">Font Awesome + Google Fonts</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-card">
+                        <div class="tech-card-header">
+                            <i class="fas fa-server text-primary"></i>
+                            <h3 class="text-lg font-semibold" data-i18n="about.techBackend">Backend</h3>
+                        </div>
+                        <ul class="tech-list">
+                            <li data-i18n="about.techBackend1">Node.js + Express</li>
+                            <li data-i18n="about.techBackend2">axios (requests), cors, dotenv</li>
+                            <li data-i18n="about.techBackend3">rss-parser (agregación de noticias)</li>
+                            <li data-i18n-html="about.techBackend4Html">Proxy API local (por defecto en <span class="text-gray-200 font-semibold">:8080</span>)</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-card">
+                        <div class="tech-card-header">
+                            <i class="fas fa-plug text-primary"></i>
+                            <h3 class="text-lg font-semibold" data-i18n="about.techSources">APIs / Fuentes</h3>
+                        </div>
+                        <ul class="tech-list">
+                            <li data-i18n="about.techSources1">IGDB API (datos de juegos/compañías/eventos)</li>
+                            <li data-i18n="about.techSources2">Twitch OAuth (token para IGDB)</li>
+                            <li data-i18n="about.techSources3">RSS (noticias reales sin API key)</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-card">
+                        <div class="tech-card-header">
+                            <i class="fas fa-shield-halved text-primary"></i>
+                            <h3 class="text-lg font-semibold" data-i18n="about.techPractices">Buenas prácticas</h3>
+                        </div>
+                        <ul class="tech-list">
+                            <li data-i18n="about.bp1">Separación frontend/back (archivos estáticos + API)</li>
+                            <li data-i18n="about.bp2">Cache de token y cache de RSS con TTL</li>
+                            <li data-i18n="about.bp3">Normalización de datos para la UI</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-2xl font-bold border-l-4 border-primary pl-4" data-i18n="about.membersTitle">Miembros del grupo</h2>
+                <p class="text-gray-300" data-i18n="about.membersHint">Datos con los nombres y roles del equipo.</p>
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="member-card">
+                        <div class="member-avatar"><i class="fas fa-user"></i></div>
+                        <div class="member-meta">
+                            <div class="member-name">Ramón Hernandez</div>
+                            <div class="member-role" data-i18n="about.roleFrontend">Frontend</div>
+                        </div>
+                    </div>
+                    <div class="member-card">
+                        <div class="member-avatar"><i class="fas fa-user"></i></div>
+                        <div class="member-meta">
+                            <div class="member-name">José Pereira</div>
+                            <div class="member-role" data-i18n="about.roleBackend">Backend / API</div>
+                        </div>
+                    </div>
+                    <div class="member-card">
+                        <div class="member-avatar"><i class="fas fa-user"></i></div>
+                        <div class="member-meta">
+                            <div class="member-name">Juan Acevedo</div>
+                            <div class="member-role" data-i18n="about.roleDesign">Diseño / UX</div>
+                        </div>
+                    </div>
+                    <div class="member-card">
+                        <div class="member-avatar"><i class="fas fa-user"></i></div>
+                        <div class="member-meta">
+                            <div class="member-name">Julio Solorzano</div>
+                            <div class="member-role" data-i18n="about.roleReport">Informe</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-panel border-t border-border">
+        <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
+            <div class="contact-social flex items-center gap-3">
+                <span class="font-semibold" data-i18n="footer.contacts">Contactos</span>
+                <div class="social-icons flex gap-3 text-xl text-primary">
+                    <i class="fab fa-discord"></i>
+                    <i class="fab fa-instagram"></i>
+                    <i class="fab fa-facebook"></i>
+                    <i class="fab fa-twitter"></i>
+                </div>
+            </div>
+            <div class="footer-info"><span data-i18n="footer.aboutPrefix">Acerca de:</span> <a class="text-primary hover:underline" href="about.html">Gokken</a></div>
+                <div class="footer-info"><span data-i18n="footer.learnPrefix">Aprender:</span> <a class="text-primary hover:underline" href="https://www.gdquest.com" target="_blank" rel="noreferrer noopener" data-i18n="footer.learnLink">Aprender a hacer juegos (ODS 4)</a></div>
+        </div>
+    </footer>
+
+    <script src="../js/i18n.js"></script>
+    <script src="../js/search.js"></script>
+</body>
+</html>

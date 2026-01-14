@@ -16,6 +16,9 @@ function apiBase(){
     return `${protocol.includes('http')? 'http' : 'http'}://${host}:${port}`;
 }
 
+const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+const getLocale = () => window.__GOKKEN_LOCALE__ || 'es-ES';
+
 function logoUrl(company){
     const id = company.logo ? company.logo.image_id : '';
     return id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${id}.png` : 'https://placehold.co/200x200/ffcc00/111?text=LOGO';
@@ -33,7 +36,7 @@ function starIcons(avg){
 
 function formatDate(ts){
     if(!ts) return '';
-    return new Date(ts*1000).toLocaleDateString('es-ES', { year:'numeric', month:'short', day:'2-digit' });
+    return new Date(ts*1000).toLocaleDateString(getLocale(), { year:'numeric', month:'short', day:'2-digit' });
 }
 
 const FALLBACK_COMPANY = {
@@ -67,8 +70,8 @@ function renderCompany(root, data){
     if(!root) return;
     const games = data.games || [];
     const featured = games.slice(0,5);
-    const countryTxt = data.country ? `País código: ${data.country}` : 'País: Desconocido';
-    const ratingTxt = data.avg_rating ? `${data.avg_rating.toFixed(1)} / 100` : 'Sin rating';
+    const countryTxt = data.country ? `${tr('search.countryCodeLabel', 'País código')}: ${data.country}` : tr('company.countryUnknown', 'País: Desconocido');
+    const ratingTxt = data.avg_rating ? `${data.avg_rating.toFixed(1)} / 100` : tr('common.noRating', 'Sin rating');
     const toHost = (url = '') => {
         try { return new URL(url).hostname; } catch { return url.replace(/^https?:\/\//,''); }
     };
@@ -85,20 +88,20 @@ function renderCompany(root, data){
                         </div>
                         <div class="flex-1 grid gap-3">
                             <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                                <h1 class="text-2xl lg:text-3xl font-bold leading-tight">${data.name || 'Compañía'}</h1>
-                                <div class="flex items-center gap-2 text-amber-400 text-xl" aria-label="Rating promedio">
+                                <h1 class="text-2xl lg:text-3xl font-bold leading-tight">${data.name || tr('search.companyDefault', 'Compañía')}</h1>
+                                <div class="flex items-center gap-2 text-amber-400 text-xl" aria-label="${tr('company.avgRatingAria', 'Rating promedio')}">
                                     ${starIcons(data.avg_rating)}
                                 </div>
                                 <span class="text-sm text-gray-200 bg-surface border border-border px-3 py-1 rounded-full">${ratingTxt}</span>
                             </div>
-                            <p class="text-gray-300 text-sm leading-relaxed">${data.description || 'Sin descripción'}</p>
+                            <p class="text-gray-300 text-sm leading-relaxed">${data.description || tr('noDescription', 'Sin descripción')}</p>
                             <div class="flex flex-wrap gap-3 text-sm text-gray-200">
                                 <span class="px-3 py-1 rounded-full bg-surface border border-border">${countryTxt}</span>
-                                <span class="px-3 py-1 rounded-full bg-surface border border-border">Juegos: ${games.length}</span>
+                                <span class="px-3 py-1 rounded-full bg-surface border border-border">${tr('results.games', 'Juegos')}: ${games.length}</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-semibold text-gray-100">Enlaces:</span>
+                                    <span class="font-semibold text-gray-100">${tr('company.linksLabel', 'Enlaces:')}</span>
                                     <div class="flex items-center gap-2">
-                                        ${(data.websites||[]).slice(0,3).map(w=>`<a class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener" aria-label="Enlace externo">🔗</a>`).join('') || '<span class="text-gray-400">Sin enlaces</span>'}
+                                        ${(data.websites||[]).slice(0,3).map(w=>`<a class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener" aria-label="${tr('common.externalLinkAria', 'Enlace externo')}">🔗</a>`).join('') || `<span class="text-gray-400">${tr('common.noLinks', 'Sin enlaces')}</span>`}
                                     </div>
                                 </div>
                             </div>
@@ -109,41 +112,41 @@ function renderCompany(root, data){
 
             <section class="grid lg:grid-cols-3 gap-6">
                 <div class="bg-panel border border-border rounded-2xl p-5 space-y-4">
-                    <h2 class="text-lg font-semibold text-gray-100">Ficha</h2>
+                    <h2 class="text-lg font-semibold text-gray-100">${tr('company.details', 'Ficha')}</h2>
                     <div class="space-y-3 text-sm text-gray-300">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-gray-400">País</span>
+                            <span class="text-gray-400">${tr('company.country', 'País')}</span>
                             <span class="text-gray-100 text-right">${countryTxt}</span>
                         </div>
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-gray-400">Rating</span>
+                            <span class="text-gray-400">${tr('company.rating', 'Rating')}</span>
                             <span class="text-gray-100 text-right">${ratingTxt}</span>
                         </div>
                         <div class="flex items-start justify-between gap-2">
-                            <span class="text-gray-400">Sitios</span>
+                            <span class="text-gray-400">${tr('company.sites', 'Sitios')}</span>
                             <div class="flex flex-wrap gap-2 justify-end">
-                                ${(data.websites||[]).slice(0,3).map(w=>`<a class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener">${toHost(w.url)}</a>`).join('') || '<span class="text-gray-400">Sin enlaces</span>'}
+                                ${(data.websites||[]).slice(0,3).map(w=>`<a class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener">${toHost(w.url)}</a>`).join('') || `<span class="text-gray-400">${tr('common.noLinks', 'Sin enlaces')}</span>`}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="bg-panel border border-border rounded-2xl p-5 lg:col-span-2 space-y-3">
-                    <h2 class="text-lg font-semibold text-gray-100">Quiénes somos</h2>
-                    <div class="text-gray-300 leading-relaxed whitespace-pre-line">${data.description || 'Sin descripción'}</div>
+                    <h2 class="text-lg font-semibold text-gray-100">${tr('company.aboutUs', 'Quiénes somos')}</h2>
+                    <div class="text-gray-300 leading-relaxed whitespace-pre-line">${data.description || tr('noDescription', 'Sin descripción')}</div>
                 </div>
             </section>
 
             <section class="bg-panel border border-border rounded-2xl p-5 space-y-4">
                 <div class="flex items-center justify-between gap-3">
-                    <h2 class="text-lg font-semibold text-gray-100">Juegos destacados</h2>
+                    <h2 class="text-lg font-semibold text-gray-100">${tr('company.featuredGames', 'Juegos destacados')}</h2>
                     <div class="flex items-center gap-2">
-                        <button class="fnav inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface hover:border-primary text-gray-200 transition" data-fprev aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
-                        <button class="fnav inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface hover:border-primary text-gray-200 transition" data-fnext aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
+                        <button class="fnav inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface hover:border-primary text-gray-200 transition" data-fprev aria-label="${tr('common.prev', 'Anterior')}"><i class="fas fa-chevron-left"></i></button>
+                        <button class="fnav inline-flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface hover:border-primary text-gray-200 transition" data-fnext aria-label="${tr('common.next', 'Siguiente')}"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
                 <div class="overflow-hidden -mx-1">
                     <div class="featured-cards flex gap-4 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
-                        ${featured.map(f => `<div class="fcard w-40 shrink-0 snap-start bg-surface border border-border rounded-xl overflow-hidden shadow-md hover:border-primary transition cursor-pointer" data-game-id="${f.id || f.slug || ''}"><div class="aspect-[3/4] bg-neutral-900"><img src="${coverUrl(f)}" class="w-full h-full object-cover" alt="${f.name}"></div><div class="ftitle px-3 py-2 text-sm font-semibold text-gray-100 leading-tight">${f.name}</div></div>`).join('') || '<div class="list-placeholder text-gray-400">Sin juegos</div>'}
+                        ${featured.map(f => `<div class="fcard w-40 shrink-0 snap-start bg-surface border border-border rounded-xl overflow-hidden shadow-md hover:border-primary transition cursor-pointer" data-game-id="${f.id || f.slug || ''}"><div class="aspect-[3/4] bg-neutral-900"><img src="${coverUrl(f)}" class="w-full h-full object-cover" alt="${f.name || tr('search.tagGame', 'Juego')}"></div><div class="ftitle px-3 py-2 text-sm font-semibold text-gray-100 leading-tight">${f.name || tr('search.tagGame', 'Juego')}</div></div>`).join('') || `<div class="list-placeholder text-gray-400">${tr('results.emptyGames', 'Sin juegos')}</div>`}
                     </div>
                 </div>
             </section>

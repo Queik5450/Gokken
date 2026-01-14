@@ -78,24 +78,32 @@ function setupNavSearch(){
             `);
         };
 
+        const locale = window.__GOKKEN_LOCALE__ || 'es-ES';
+        const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+        const na = tr('common.na', 'N/A');
+        const noDate = tr('common.noDate', 'Sin fecha');
+        const tagGame = tr('search.tagGame', 'Juego');
+        const tagCompany = tr('search.tagCompany', 'Compañía');
+        const tagPlatform = tr('search.tagPlatform', 'Consola');
+
         games.slice(0,4).forEach(it=>{
             const img = it.cover && it.cover.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_small/${it.cover.image_id}.jpg` : 'https://placehold.co/46x46/222/fff?text=G';
-            const meta = `${it.rating ? it.rating.toFixed(1) : 'N/A'} · ${it.first_release_date ? new Date(it.first_release_date*1000).toLocaleDateString('es-ES') : 'Sin fecha'}`;
-            addRow('game', 'Juego', img, it.name, meta, `game.html?id=${it.id || it.slug || ''}`);
+            const meta = `${it.rating ? it.rating.toFixed(1) : na} · ${it.first_release_date ? new Date(it.first_release_date*1000).toLocaleDateString(locale) : noDate}`;
+            addRow('game', tagGame, img, it.name, meta, `game.html?id=${it.id || it.slug || ''}`);
         });
 
         companies.slice(0,3).forEach(c=>{
             const img = c.logo && c.logo.image_id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${c.logo.image_id}.png` : 'https://placehold.co/46x46/222/fff?text=C';
-            const meta = c.country ? `País código: ${c.country}` : 'Compañía';
-            addRow('company', 'Compañía', img, c.name, meta, `company.html?id=${c.id || c.slug || ''}`);
+            const meta = c.country ? `${tr('search.countryCodeLabel', 'País código')}: ${c.country}` : tr('search.companyDefault', 'Compañía');
+            addRow('company', tagCompany, img, c.name, meta, `company.html?id=${c.id || c.slug || ''}`);
         });
 
         platforms.slice(0,3).forEach(p=>{
             const img = p.platform_logo && p.platform_logo.image_id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${p.platform_logo.image_id}.png` : 'https://placehold.co/46x46/222/fff?text=P';
             const family = p.platform_family ? p.platform_family.name : '';
             const metaParts = [p.abbreviation || null, family || null, p.generation ? `Gen ${p.generation}` : null].filter(Boolean);
-            const meta = metaParts.join(' · ') || 'Consola';
-            addRow('platform', 'Consola', img, p.name, meta, `platform.html?id=${p.id || p.slug || ''}`);
+            const meta = metaParts.join(' · ') || tr('search.platformDefault', 'Consola');
+            addRow('platform', tagPlatform, img, p.name, meta, `platform.html?id=${p.id || p.slug || ''}`);
         });
 
         if(!rows.length){ box.innerHTML=''; hideSuggestions(); return; }

@@ -7,6 +7,10 @@ function apiBase(){
     return `${protocol.includes('http')? 'http' : 'http'}://${host}:${port}`;
 }
 
+const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+const getLocale = () => window.__GOKKEN_LOCALE__ || 'es-ES';
+const getLang = () => window.__GOKKEN_LANG__ || 'es';
+
 function heroImage(game){
     const shot = game.screenshots && game.screenshots[0] ? game.screenshots[0].image_id : '';
     const art = game.artworks && game.artworks[0] ? game.artworks[0].image_id : '';
@@ -30,7 +34,7 @@ function normalizeGameId(game){
 
 function formatRelease(ts){
     if (!ts) return '';
-    return new Date(ts * 1000).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+    return new Date(ts * 1000).toLocaleDateString(getLocale(), { day:'2-digit', month:'short', year:'numeric' });
 }
 
 function makeClickableSelector(selector, titleSelector) {
@@ -155,7 +159,7 @@ function renderCompanies(listEl, companies){
     listEl.innerHTML = '';
 
     if(!companies || !companies.length){
-        listEl.innerHTML = '<div class="company-placeholder">Sin compañías</div>';
+        listEl.innerHTML = `<div class="company-placeholder">${tr('results.emptyCompanies', 'Sin compañías')}</div>`;
         return;
     }
 
@@ -167,7 +171,7 @@ function renderCompanies(listEl, companies){
             <div class="company-logo"><img src="${logoUrl(c)}" alt="${c.name}"></div>
             <div class="company-rect">
                 <div class="company-name">${c.name}</div>
-                <div class="company-rating">${c.avg_rating ? `${c.avg_rating.toFixed(1)} / 100` : 'Sin rating'}</div>
+                <div class="company-rating">${c.avg_rating ? `${c.avg_rating.toFixed(1)} / 100` : tr('common.noRating', 'Sin rating')}</div>
             </div>
         `;
         item.addEventListener('click', () => {
@@ -183,7 +187,8 @@ function renderList(listEl, games, { emptyText = 'Sin resultados', statusBuilder
     listEl.innerHTML = '';
 
     if (!games || !games.length){
-        listEl.innerHTML = `<div class="list-placeholder">${emptyText}</div>`;
+        const safeEmpty = emptyText === 'Sin resultados' ? tr('common.noResults', 'Sin resultados') : emptyText;
+        listEl.innerHTML = `<div class="list-placeholder">${safeEmpty}</div>`;
         return;
     }
 
@@ -214,7 +219,7 @@ function eventImage(ev){
 
 function formatDateTime(ts){
     if (!ts) return '';
-    return new Date(ts*1000).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return new Date(ts*1000).toLocaleString(getLocale(), { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
 async function fetchEvents(){
@@ -230,7 +235,7 @@ async function fetchEvents(){
 }
 
 async function fetchNews(){
-    const url = `${apiBase()}/api/news?limit=12`;
+    const url = `${apiBase()}/api/news?limit=12&lang=${encodeURIComponent(getLang())}`;
     try{
         const res = await fetch(url);
         if(!res.ok) throw new Error(res.statusText);
@@ -239,24 +244,26 @@ async function fetchNews(){
         return data;
     }catch(e){
         console.error('Fetch news error', e);
-        return [];
+        return FALLBACK_NEWS;
     }
 }
 
 function newsImage(item){
     const id = item.pulse_image ? item.pulse_image.image_id : '';
-    return id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${id}.jpg` : 'https://placehold.co/640x360/222/fff?text=Noticia';
+    if (id) return `https://images.igdb.com/igdb/image/upload/t_cover_big/${id}.jpg`;
+    const direct = item.image_url || item.image || '';
+    return direct ? direct : 'https://placehold.co/640x360/222/fff?text=Noticia';
 }
 
 function mapPost(entry){
     const isEvent = entry.start_time !== undefined;
     return {
         id: entry.id || entry.slug || Math.random().toString(36).slice(2),
-        title: isEvent ? entry.name : (entry.title || 'Noticia'),
+        title: isEvent ? entry.name : (entry.title || tr('main.tagNews', 'Noticia')),
         body: entry.description || entry.summary || '',
         date: isEvent ? entry.start_time : (entry.published_at || entry.updated_at || null),
         image: isEvent ? eventImage(entry) : newsImage(entry),
-        tag: isEvent ? 'Evento' : 'Noticia',
+        tag: isEvent ? tr('main.tagEvent', 'Evento') : tr('main.tagNews', 'Noticia'),
         url: entry.url || (entry.websites && entry.websites[0] ? entry.websites[0].url : '')
     };
 }
@@ -266,7 +273,7 @@ function renderEvents(gridEl, posts){
     gridEl.innerHTML = '';
 
     if(!posts || !posts.length){
-        gridEl.innerHTML = '<div class="event-placeholder">Sin eventos o noticias</div>';
+        gridEl.innerHTML = `<div class="event-placeholder">${tr('main.emptyEventsNews', 'Sin eventos o noticias')}</div>`;
         return;
     }
 
@@ -280,9 +287,9 @@ function renderEvents(gridEl, posts){
             </div>
             <div class="news-title">${post.title}</div>
             <div class="news-media"><img src="${post.image}" alt="${post.title}"></div>
-            <div class="news-body">${post.body ? post.body.slice(0,180) + (post.body.length>180 ? '...' : '') : 'Sin descripción'}</div>
+            <div class="news-body">${post.body ? post.body.slice(0,180) + (post.body.length>180 ? '...' : '') : tr('noDescription', 'Sin descripción')}</div>
             <div class="news-actions">
-                ${post.url ? `<button class="news-link" data-link>Ver más</button>` : ''}
+                ${post.url ? `<button class="news-link" data-link>${tr('common.seeMore', 'Ver más')}</button>` : ''}
             </div>
         `;
         card.addEventListener('click', () => openEventDetail(post));
@@ -306,15 +313,15 @@ async function loadRecentAndUpcoming(){
 
     if (recentEl){
         renderList(recentEl, recent, {
-            emptyText: 'No hay lanzamientos en los últimos 15 días',
-            statusBuilder: (g) => g.first_release_date ? `Lanzado ${formatRelease(g.first_release_date)}` : ''
+            emptyText: tr('main.emptyRecent15', 'No hay lanzamientos en los últimos 15 días'),
+            statusBuilder: (g) => g.first_release_date ? `${tr('main.releasedPrefix', 'Lanzado')} ${formatRelease(g.first_release_date)}` : ''
         });
     }
 
     if (upcomingEl){
         renderList(upcomingEl, upcoming, {
-            emptyText: 'No hay lanzamientos próximos en 15 días',
-            statusBuilder: (g) => g.first_release_date ? `Lanza ${formatRelease(g.first_release_date)}` : 'Muy pronto'
+            emptyText: tr('main.emptyUpcoming15', 'No hay lanzamientos próximos en 15 días'),
+            statusBuilder: (g) => g.first_release_date ? `${tr('main.launchesPrefix', 'Lanza')} ${formatRelease(g.first_release_date)}` : tr('main.comingSoon', 'Muy pronto')
         });
     }
 }
@@ -458,8 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let visibleCount = 3;
 
     function renderDetail(post){
-        const body = post.body || 'Sin descripción';
-        const linkBtn = post.url ? `<button class="read-more-btn" data-event-link>Visitar enlace</button>` : '';
+        const body = post.body || tr('noDescription', 'Sin descripción');
+        const linkBtn = post.url ? `<button class="read-more-btn" data-event-link>${tr('common.visitLink', 'Visitar enlace')}</button>` : '';
         eventsFeedFull.innerHTML = `
             <div class="event-detail">
                 <div class="detail-meta">${formatDateTime(post.date)}</div>
@@ -480,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if(!post){
-            eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
+            eventsFeedFull.innerHTML = `<div class="event-placeholder">${tr('main.emptyEventsToShow', 'Sin eventos para mostrar')}</div>`;
         }else{
             renderDetail(post);
         }
@@ -492,15 +499,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function openEventsList(allPosts){
         if(!eventsOverlay || !eventsFeedFull) return;
         if(!allPosts || !allPosts.length){
-            eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
+            eventsFeedFull.innerHTML = `<div class="event-placeholder">${tr('main.emptyEventsToShow', 'Sin eventos para mostrar')}</div>`;
         } else {
             eventsFeedFull.innerHTML = allPosts.map(post => `
                 <div class="event-detail">
                     <div class="detail-meta">${formatDateTime(post.date)}</div>
                     <h3>${post.title}</h3>
                     <img class="detail-hero" src="${post.image}" alt="${post.title}">
-                    <div class="detail-body">${post.body || 'Sin descripción'}</div>
-                    <div class="detail-actions">${post.url ? `<button class="read-more-btn" data-event-link="${post.url}">Visitar enlace</button>` : ''}</div>
+                    <div class="detail-body">${post.body || tr('noDescription', 'Sin descripción')}</div>
+                    <div class="detail-actions">${post.url ? `<button class="read-more-btn" data-event-link="${post.url}">${tr('common.visitLink', 'Visitar enlace')}</button>` : ''}</div>
                 </div>
             `).join('');
 

@@ -5,12 +5,139 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const Parser = require('rss-parser');
 
 const app = express();
 app.use(cors());
 
+const rssParser = new Parser({
+    timeout: 10000,
+    headers: {
+        'User-Agent': 'Gokken/1.0 (+https://localhost)'
+    }
+});
+
 let accessToken = null;
 let tokenExpiry = 0;
+
+function toUnixSeconds(value) {
+    if (!value) return null;
+    if (typeof value === 'number') {
+        return value > 1e12 ? Math.floor(value / 1000) : value;
+    }
+    if (typeof value === 'string') {
+        const ms = Date.parse(value);
+        return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
+    }
+    return null;
+}
+
+function stripHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function pickRssImage(item) {
+    const enclosureUrl = item?.enclosure?.url;
+    if (enclosureUrl) return enclosureUrl;
+
+    // Some feeds provide media:content or media:thumbnail in custom fields.
+    const mediaContent = item?.['media:content']?.['$']?.url || item?.['media:content']?.url;
+    if (mediaContent) return mediaContent;
+
+    const mediaThumb = item?.['media:thumbnail']?.['$']?.url || item?.['media:thumbnail']?.url;
+    if (mediaThumb) return mediaThumb;
+
+    // Fallback: try to extract first <img src="..."> from HTML content.
+    const html = item?.content || item?.['content:encoded'] || '';
+    const match = String(html).match(/<img[^>]+src=["']([^"']+)["']/i);
+    return match ? match[1] : '';
+}
+
+const RSS_FEEDS_ES = [
+    // Spanish gaming news sources.
+    { name: 'Eurogamer ES', url: 'https://www.eurogamer.es/feed' },
+    { name: 'Vandal', url: 'https://vandal.elespanol.com/rss/noticias.xml' },
+    { name: 'MeriStation', url: 'https://as.com/meristation/feed/' }
+];
+
+const RSS_FEEDS_EN = [
+    { name: 'IGN', url: 'https://www.ign.com/articles?format=rss' },
+    { name: 'Polygon', url: 'https://www.polygon.com/rss/index.xml' },
+    { name: 'Eurogamer', url: 'https://www.eurogamer.net/feed/news' }
+];
+
+function normalizeNewsLang(value) {
+    const lang = String(value || '').toLowerCase().trim();
+    if (lang === 'en') return 'en';
+    return 'es';
+}
+
+function getRssFeeds(lang) {
+    return normalizeNewsLang(lang) === 'en' ? RSS_FEEDS_EN : RSS_FEEDS_ES;
+}
+
+let rssNewsCache = {
+    es: { at: 0, ttlMs: 10 * 60 * 1000, items: [] },
+    en: { at: 0, ttlMs: 10 * 60 * 1000, items: [] }
+};
+
+async function fetchRssNews(limit, lang) {
+    const resolvedLang = normalizeNewsLang(lang);
+    const cache = rssNewsCache[resolvedLang] || rssNewsCache.es;
+    const now = Date.now();
+
+    if (cache.items.length && now - cache.at < cache.ttlMs) {
+        return cache.items.slice(0, limit);
+    }
+
+    const feeds = getRssFeeds(resolvedLang);
+    const results = await Promise.all(
+        feeds.map(async (feed) => {
+            try {
+                const parsed = await rssParser.parseURL(feed.url);
+                return (parsed.items || []).map((item, idx) => {
+                    const published = item.isoDate || item.pubDate || item.published || null;
+                    return {
+                        id: `${feed.name}:${item.guid || item.id || item.link || idx}`,
+                        title: item.title || 'Noticia',
+                        summary: stripHtml(item.contentSnippet || item.content || item.summary || item.description || ''),
+                        published_at: toUnixSeconds(published),
+                        url: item.link || '',
+                        image_url: pickRssImage(item)
+                    };
+                });
+            } catch {
+                return [];
+            }
+        })
+    );
+
+    const merged = results.flat();
+    merged.sort((a, b) => (b.published_at || 0) - (a.published_at || 0));
+
+    const dedup = [];
+    const seen = new Set();
+    for (const item of merged) {
+        const key = item.url || item.id;
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        dedup.push(item);
+        if (dedup.length >= limit) break;
+    }
+
+    rssNewsCache = {
+        ...rssNewsCache,
+        [resolvedLang]: { ...cache, at: now, items: dedup }
+    };
+
+    return dedup;
+}
 
 async function getAccessToken() {
     if (!process.env.IGDB_CLIENT_ID || !process.env.IGDB_CLIENT_SECRET) {
@@ -355,13 +482,18 @@ app.get('/api/events', async (req, res) => {
         const windowPast = now - (30 * 86400);
 
         const events = await igdbQuery('events', `
-            fields name, slug, start_time, end_time, event_logo.image_id, description, url;
+            fields id, name, slug, start_time, end_time, event_logo.image_id, description, live_stream_url, event_networks.url;
             where start_time != null & start_time >= ${windowPast};
             sort start_time asc;
             limit ${limit};
         `);
 
-        res.json(events);
+        const normalized = (events || []).map(e => ({
+            ...e,
+            url: e?.live_stream_url || (Array.isArray(e?.event_networks) && e.event_networks[0]?.url ? e.event_networks[0].url : '')
+        }));
+
+        res.json(normalized);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch events' });
@@ -371,13 +503,44 @@ app.get('/api/events', async (req, res) => {
 app.get('/api/news', async (req, res) => {
     try {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
-        const pulses = await igdbQuery('pulses', `
-            fields id, title, summary, published_at, updated_at, pulse_image.image_id, websites.url, url;
-            sort published_at desc;
+
+        const lang = normalizeNewsLang(req.query.lang);
+
+        // Prefer real news via RSS.
+        const rssItems = await fetchRssNews(limit, lang);
+        if (rssItems && rssItems.length) {
+            return res.json(rssItems);
+        }
+
+        // Fallback to English RSS if Spanish feeds fail/are rate-limited.
+        if (lang !== 'en') {
+            const enItems = await fetchRssNews(limit, 'en');
+            if (enItems && enItems.length) {
+                return res.json(enItems);
+            }
+        }
+
+        // IGDB's historical "pulses" endpoint is not available for many accounts (404).
+        // Provide a stable "news" feed by using recently updated games.
+        const games = await igdbQuery('games', `
+            fields id, name, summary, updated_at, cover.image_id, url;
+            where summary != null & cover != null;
+            sort updated_at desc;
             limit ${limit};
         `);
 
-        res.json(pulses || []);
+        const news = (games || []).map(g => ({
+            id: g.id,
+            title: g.name,
+            summary: g.summary,
+            published_at: toUnixSeconds(g.updated_at),
+            updated_at: toUnixSeconds(g.updated_at),
+            pulse_image: g.cover ? { image_id: g.cover.image_id } : null,
+            url: g.url || '',
+            image_url: ''
+        }));
+
+        res.json(news);
     } catch (error) {
         console.error('Fetch news failed', error?.response?.data || error.message || error);
         res.status(200).json([]);

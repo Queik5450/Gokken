@@ -23,6 +23,8 @@ function apiBase(){
     return `${proto}://${host}${usePort}`;
 }
 
+const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+
 function logoUrlPlatform(p){
     const id = p.platform_logo ? p.platform_logo.image_id : '';
     return id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${id}.png` : 'https://placehold.co/260x200/222/fff?text=Hardware';
@@ -34,8 +36,16 @@ function coverUrl(game){
 }
 
 function categoryLabel(cat){
-    const map = { 1: 'Consola', 2: 'Arcade', 3: 'Plataforma', 4: 'Sistema operativo', 5: 'Portátil', 6: 'Computadora' };
-    return map[cat] || 'N/D';
+    const map = {
+        1: ['platform.categoryConsole', 'Consola'],
+        2: ['platform.categoryArcade', 'Arcade'],
+        3: ['platform.categoryPlatform', 'Plataforma'],
+        4: ['platform.categoryOS', 'Sistema operativo'],
+        5: ['platform.categoryPortable', 'Portátil'],
+        6: ['platform.categoryComputer', 'Computadora']
+    };
+    const entry = map[cat];
+    return entry ? tr(entry[0], entry[1]) : tr('common.na', 'N/A');
 }
 
 const FALLBACK_PLATFORM = {
@@ -82,11 +92,11 @@ function renderPlatform(root, data){
     if(!root) return;
     const family = data.platform_family ? data.platform_family.name : null;
     const metaParts = [data.abbreviation || null, family || null, data.generation ? `Gen ${data.generation}` : null].filter(Boolean);
-    const metaText = metaParts.join(' · ') || 'Hardware';
+    const metaText = metaParts.join(' · ') || tr('results.hardwareDefault', 'Hardware');
     const toHost = (url='') => { try { return new URL(url).hostname; } catch { return url.replace(/^https?:\/\//,''); } };
     const links = (data.websites || []).slice(0,3).map(w => {
         const host = toHost(w.url);
-        return `<a class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener">${host || 'link'}</a>`;
+        return `<a class="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface text-primary hover:border-primary transition" href="${w.url}" target="_blank" rel="noreferrer noopener">${host || tr('common.link', 'link')}</a>`;
     }).join(' ');
 
     const FALLBACK_FEATURED = [
@@ -99,12 +109,16 @@ function renderPlatform(root, data){
     const gallery = [logoUrlPlatform(data), logoUrlPlatform(data), logoUrlPlatform(data), logoUrlPlatform(data)];
     const heroImage = logoUrlPlatform(data);
     const specList = [
-        'CPU y GPU personalizadas',
-        'Memoria GDDR6 de alta velocidad',
-        'Almacenamiento NVMe ultrarrápido',
-        family ? `Familia: ${family}` : 'Compatibilidad multimedia avanzada'
+        tr('platform.spec1', 'CPU y GPU personalizadas'),
+        tr('platform.spec2', 'Memoria GDDR6 de alta velocidad'),
+        tr('platform.spec3', 'Almacenamiento NVMe ultrarrápido'),
+        family ? `${tr('platform.familyLabel', 'Familia')}: ${family}` : tr('platform.spec4Fallback', 'Compatibilidad multimedia avanzada')
     ];
-    const versions = ['Slim', 'Pro', 'Edición Digital'];
+    const versions = [
+        tr('platform.versionSlim', 'Slim'),
+        tr('platform.versionPro', 'Pro'),
+        tr('platform.versionDigital', 'Edición Digital')
+    ];
     const featuredList = Array.isArray(data.featuredGames) && data.featuredGames.length ? data.featuredGames : FALLBACK_FEATURED;
 
     const gameHref = (g) => {
@@ -117,7 +131,7 @@ function renderPlatform(root, data){
     root.innerHTML = `
         <div class="space-y-10">
             <div class="text-center">
-                <h1 class="text-4xl font-black tracking-tight uppercase">${data.name || 'Consola'}</h1>
+                <h1 class="text-4xl font-black tracking-tight uppercase">${data.name || tr('search.platformDefault', 'Consola')}</h1>
                 <p class="text-gray-400 mt-1">${metaText}</p>
             </div>
 
@@ -125,7 +139,7 @@ function renderPlatform(root, data){
                 <div class="flex lg:flex-col gap-3 justify-center lg:justify-start">
                     ${gallery.map((src, idx) => `
                         <div class="w-16 h-16 rounded-xl border border-border bg-panel overflow-hidden flex items-center justify-center shadow-md shadow-black/30">
-                            <img src="${src}" alt="Vista ${idx + 1}" class="w-full h-full object-cover">
+                            <img src="${src}" alt="${tr('platform.viewAlt', 'Vista')} ${idx + 1}" class="w-full h-full object-cover">
                         </div>
                     `).join('')}
                 </div>
@@ -139,7 +153,7 @@ function renderPlatform(root, data){
                         <div class="flex-1 bg-surface/70 backdrop-blur px-6 py-6 flex flex-col gap-5">
                             <div class="flex items-center justify-between gap-3">
                                 <div>
-                                    <h2 class="text-xl font-semibold text-gray-100">Especificaciones</h2>
+                                    <h2 class="text-xl font-semibold text-gray-100">${tr('platform.specifications', 'Especificaciones')}</h2>
                                     <p class="text-sm text-gray-400">${metaText}</p>
                                 </div>
                                 <span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase border border-primary/60">${categoryLabel(data.category)}</span>
@@ -149,25 +163,25 @@ function renderPlatform(root, data){
                             </div>
                             <div class="border-t border-border pt-4 mt-auto grid grid-cols-2 gap-3 text-sm text-gray-200">
                                 <div>
-                                    <div class="text-gray-400">Fabricante</div>
-                                    <div class="font-semibold">${family || 'Sin datos'}</div>
+                                    <div class="text-gray-400">${tr('platform.manufacturer', 'Fabricante')}</div>
+                                    <div class="font-semibold">${family || tr('common.noData', 'Sin datos')}</div>
                                 </div>
                                 <div>
-                                    <div class="text-gray-400">Generación</div>
-                                    <div class="font-semibold">${data.generation || 'N/D'}</div>
+                                    <div class="text-gray-400">${tr('platform.generation', 'Generación')}</div>
+                                    <div class="font-semibold">${data.generation || tr('common.na', 'N/A')}</div>
                                 </div>
                                 <div>
-                                    <div class="text-gray-400">Enlaces</div>
-                                    <div class="flex flex-wrap gap-2 mt-1">${links || '<span class="text-gray-500">Sin enlaces</span>'}</div>
+                                    <div class="text-gray-400">${tr('platform.links', 'Enlaces')}</div>
+                                    <div class="flex flex-wrap gap-2 mt-1">${links || `<span class="text-gray-500">${tr('common.noLinks', 'Sin enlaces')}</span>`}</div>
                                 </div>
                                 <div>
-                                    <div class="text-gray-400">Abreviatura</div>
-                                    <div class="font-semibold">${data.abbreviation || 'N/D'}</div>
+                                    <div class="text-gray-400">${tr('platform.abbreviation', 'Abreviatura')}</div>
+                                    <div class="font-semibold">${data.abbreviation || tr('common.na', 'N/A')}</div>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden lg:flex w-56 flex-col gap-3 border-l border-border bg-panel/80 px-5 py-6">
-                            <h3 class="text-lg font-semibold text-gray-100">Otras versiones</h3>
+                            <h3 class="text-lg font-semibold text-gray-100">${tr('platform.otherVersions', 'Otras versiones')}</h3>
                             <div class="flex flex-wrap gap-2">
                                 ${versions.map(v => `<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-border text-primary text-xs font-semibold">${v}</span>`).join('')}
                             </div>
@@ -178,8 +192,8 @@ function renderPlatform(root, data){
 
             <section class="space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-black text-gray-100">Juegos Destacados</h2>
-                    <a href="#" class="text-primary font-semibold flex items-center gap-2 hover:underline">Ver todos <i class="fa-solid fa-chevron-right"></i></a>
+                    <h2 class="text-2xl font-black text-gray-100">${tr('platform.featuredGames', 'Juegos Destacados')}</h2>
+                    <a href="#" class="text-primary font-semibold flex items-center gap-2 hover:underline">${tr('common.viewAll', 'Ver todos')} <i class="fa-solid fa-chevron-right"></i></a>
                 </div>
                 <div class="flex items-center gap-3">
                     <button class="w-10 h-10 flex items-center justify-center rounded-full border border-border bg-panel text-primary hover:border-primary"><i class="fa-solid fa-chevron-left"></i></button>
@@ -187,9 +201,9 @@ function renderPlatform(root, data){
                         ${featuredList.map(g => `
                             <a class="w-48 bg-panel border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/30 flex-shrink-0 hover:border-primary" href="${gameHref(g)}">
                                 <div class="h-60 bg-neutral-800">
-                                    <img src="${coverUrl(g)}" alt="${g.name || g.title || 'Juego'}" class="w-full h-full object-cover">
+                                    <img src="${coverUrl(g)}" alt="${g.name || g.title || tr('search.tagGame', 'Juego')}" class="w-full h-full object-cover">
                                 </div>
-                                <div class="bg-primary/90 text-white text-center text-sm font-semibold py-3">${g.name || g.title || 'Juego'}</div>
+                                <div class="bg-primary/90 text-white text-center text-sm font-semibold py-3">${g.name || g.title || tr('search.tagGame', 'Juego')}</div>
                             </a>
                         `).join('')}
                     </div>
@@ -205,7 +219,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const slug = qs('slug');
     const root = document.getElementById('platformRoot');
     if(!id && !slug){
-        if(root) root.innerHTML = '<div class="list-placeholder">Consola no encontrada</div>';
+        if(root) root.innerHTML = `<div class="list-placeholder">${tr('platform.notFound', 'Consola no encontrada')}</div>`;
         return;
     }
     const data = await fetchPlatform(id, slug);
