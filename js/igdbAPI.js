@@ -3,17 +3,17 @@ function apiBase(){
     if (hinted) return hinted.replace(/\/$/,'');
     const { protocol, hostname } = window.location;
     const host = hostname || 'localhost';
-    const port = 8080; // default backend port
+    const port = 8080;
     return `${protocol.includes('http')? 'http' : 'http'}://${host || 'localhost'}:${port}`;
 }
 
 function sampleGames(){
     return [
-        { name: 'The Witcher 3: Wild Hunt', cover: { image_id: 'co1r16' }, id: 1942 },
-        { name: 'Red Dead Redemption 2', cover: { image_id: 'co1l7n' }, id: 1877 },
-        { name: 'God of War', cover: { image_id: 'co1tmu' }, id: 11133 },
-        { name: 'Hades', cover: { image_id: 'co1wyy' }, id: 134225 },
-        { name: 'Hollow Knight', cover: { image_id: 'co1qky' }, id: 19700 }
+        { name: 'Game 1', cover: { image_id: 'co1r16' }, id: 101 },
+        { name: 'Game 2', cover: { image_id: 'co1l7n' }, id: 102 },
+        { name: 'Game 3', cover: { image_id: 'co1tmu' }, id: 103 },
+        { name: 'Game 4', cover: { image_id: 'co1wyy' }, id: 104 },
+        { name: 'Game 5', cover: { image_id: 'co1qky' }, id: 105 }
     ];
 }
 
@@ -34,7 +34,6 @@ async function getTopGames()
     catch (error)
     {
         console.error('Error fetching games:', error);
-        // Fallback: mostrar ejemplos para evitar la sección vacía
         renderGames(sampleGames());
     }
 }
@@ -55,7 +54,6 @@ function renderGames(games)
             ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg` 
             : 'https://placehold.co/200x280/333/white?text=No+Image';
 
-        // Link to game detail page; if `game.id` is present use it, otherwise fallback to name-based id
         const gid = game.id !== undefined ? game.id : encodeURIComponent(game.name.replace(/\s+/g,'-').toLowerCase());
         card.innerHTML = `
             <a class="game-link" href="game.html?id=${gid}">

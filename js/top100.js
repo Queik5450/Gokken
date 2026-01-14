@@ -34,25 +34,26 @@ function coverUrl(game){
 function scoreBadge(r){
   const n = Math.round((r||0));
   const color = n>=90? '#00b374' : n>=80? '#e25a00' : '#d4a600';
-  return `<div class="score-badge" style="background:${color}">${(r||0).toFixed ? (r||0).toFixed(1) : r}</div>`;
+  return `<div class="score-badge text-sm font-semibold px-3 py-1 rounded-full text-gray-900" style="background:${color}">${(r||0).toFixed ? (r||0).toFixed(1) : r}</div>`;
 }
 
 function renderList(games){
   const root = document.getElementById('top100List');
   if(!root) return;
   root.innerHTML = games.map((g,idx)=>`
-    <article class="top-item">
-      <div class="rank">${idx+1}</div>
+    <article class="top-item flex items-start gap-4 bg-panel border border-border rounded-xl p-4 hover:border-primary transition cursor-pointer">
+      <div class="rank w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center text-sm font-bold text-gray-200">${idx+1}</div>
       ${scoreBadge(g.rating || 0)}
-      <div class="thumb"><img src="${coverUrl(g)}" alt="${g.name}"></div>
-      <div class="info">
-        <h3 class="name">${g.name}</h3>
-        <p class="desc">${g.summary? g.summary : 'Descripción no disponible.'}</p>
+      <div class="thumb w-16 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-border shrink-0">
+        <img src="${coverUrl(g)}" alt="${g.name}" class="w-full h-full object-cover">
+      </div>
+      <div class="info flex-1 min-w-0">
+        <h3 class="name text-base font-semibold text-gray-100 leading-tight truncate">${g.name}</h3>
+        <p class="desc text-sm text-gray-300 leading-relaxed">${g.summary? g.summary : 'Descripción no disponible.'}</p>
       </div>
     </article>
   `).join('');
 
-  // click to game page
   root.querySelectorAll('.top-item').forEach((el, i)=>{
     el.style.cursor='pointer';
     el.addEventListener('click', ()=>{
@@ -66,7 +67,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const games = await fetchTop(100);
   renderList(games);
 
-  // simple rating filter
   const fRating = document.getElementById('fRating');
   fRating?.addEventListener('change', ()=>{
     const min = fRating.value==='all'? 0 : Number(fRating.value);

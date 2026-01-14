@@ -16,6 +16,309 @@ function heroImage(game){
     return id ? `https://images.igdb.com/igdb/image/upload/${size}/${id}.jpg` : 'https://placehold.co/1920x600/111/fff?text=Gokken+Hero';
 }
 
+function coverSmall(game){
+    const id = game.cover ? game.cover.image_id : '';
+    return id ? `https://images.igdb.com/igdb/image/upload/t_cover_small/${id}.jpg` : 'https://placehold.co/120x70/333/white?text=No+Cover';
+}
+
+function normalizeGameId(game){
+    if (game.id !== undefined) return game.id;
+    if (game.slug) return game.slug;
+    const safe = (game.name || '').replace(/\s+/g, '-').toLowerCase();
+    return encodeURIComponent(safe);
+}
+
+function formatRelease(ts){
+    if (!ts) return '';
+    return new Date(ts * 1000).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function makeClickableSelector(selector, titleSelector) {
+    const nodes = document.querySelectorAll(selector);
+    nodes.forEach(node => {
+        node.style.cursor = 'pointer';
+        node.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return;
+            const dataId = node.getAttribute('data-game-id') || node.getAttribute('data-id');
+            let gid = dataId;
+            if (!gid) {
+                const titleEl = titleSelector ? node.querySelector(titleSelector) : node.querySelector('h4, .game-title, .ftitle');
+                const title = titleEl ? titleEl.textContent.trim() : '';
+                gid = title ? encodeURIComponent(title.replace(/\s+/g,'-').toLowerCase()) : null;
+            }
+            if (gid) window.location.href = `game.html?id=${gid}`;
+        });
+    });
+}
+
+const FALLBACK_RECENT = [
+    { name:'Game A', cover:{ image_id:'co1r7v' }, first_release_date: Math.floor(Date.now()/1000) - 3*86400 },
+    { name:'Game B', cover:{ image_id:'co2nbi' }, first_release_date: Math.floor(Date.now()/1000) - 8*86400 },
+    { name:'Game C', cover:{ image_id:'co25x8' }, first_release_date: Math.floor(Date.now()/1000) - 10*86400 },
+    { name:'Game D', cover:{ image_id:'co1t35' }, first_release_date: Math.floor(Date.now()/1000) - 12*86400 }
+];
+
+const FALLBACK_UPCOMING = [
+    { name:'Upcoming Game 1', cover:{ image_id:'co1s1x' }, first_release_date: Math.floor(Date.now()/1000) + 4*86400 },
+    { name:'Upcoming Game 2', cover:{ image_id:'' }, first_release_date: Math.floor(Date.now()/1000) + 6*86400 },
+    { name:'Upcoming Game 3', cover:{ image_id:'co3t5e' }, first_release_date: Math.floor(Date.now()/1000) + 9*86400 },
+    { name:'Upcoming Game 4', cover:{ image_id:'co2sc4' }, first_release_date: Math.floor(Date.now()/1000) + 11*86400 }
+];
+
+const FALLBACK_COMPANIES = [
+    { id: 1, name:'Sony Interactive Entertainment', logo:{ image_id:'co6exk' }, avg_rating: 89.5 },
+    { id: 2, name:'Nintendo', logo:{ image_id:'co2lly' }, avg_rating: 91.2 },
+    { id: 3, name:'Ubisoft', logo:{ image_id:'co2z5o' }, avg_rating: 78.0 },
+    { id: 4, name:'Rockstar Games', logo:{ image_id:'co2w0m' }, avg_rating: 94.1 },
+    { id: 5, name:'Square Enix', logo:{ image_id:'co3loq' }, avg_rating: 85.3 }
+];
+
+const FALLBACK_EVENTS = [
+    {
+        name: 'Event 1',
+        description: 'Descripción genérica del evento 1.',
+        start_time: Math.floor(Date.now()/1000) + 3*86400,
+        event_logo: { image_id:'co2p83' },
+        url: ''
+    },
+    {
+        name: 'Event 2',
+        description: 'Descripción genérica del evento 2.',
+        start_time: Math.floor(Date.now()/1000) + 20*86400,
+        event_logo: { image_id:'co2p6u' },
+        url: ''
+    },
+    {
+        name: 'Event 3',
+        description: 'Descripción genérica del evento 3.',
+        start_time: Math.floor(Date.now()/1000) + 45*86400,
+        event_logo: { image_id:'co2p8d' },
+        url: ''
+    }
+];
+
+const FALLBACK_NEWS = [
+    {
+        title: 'Actualización destacada',
+        summary: 'Notas de parche y mejoras recientes.',
+        published_at: Math.floor(Date.now()/1000) - 2*86400,
+        pulse_image: { image_id:'co1r16' },
+        url: ''
+    },
+    {
+        title: 'Nuevo contenido',
+        summary: 'Se anunció contenido adicional y eventos en vivo.',
+        published_at: Math.floor(Date.now()/1000) - 5*86400,
+        pulse_image: { image_id:'co1l7n' },
+        url: ''
+    },
+    {
+        title: 'Comunidad',
+        summary: 'Historias destacadas de la comunidad y torneos.',
+        published_at: Math.floor(Date.now()/1000) - 8*86400,
+        pulse_image: { image_id:'co1tmu' },
+        url: ''
+    }
+];
+
+async function fetchWindow(kind, fallback){
+    const url = `${apiBase()}/api/games/${kind}?days=15&limit=4`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.statusText);
+        return await res.json();
+    } catch (e) {
+        console.error(`Fetch ${kind} error`, e);
+        return fallback;
+    }
+}
+
+function logoUrl(c){
+    const id = c.logo ? c.logo.image_id : '';
+    return id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${id}.png` : 'https://placehold.co/200x200/fff/111?text=Logo';
+}
+
+async function fetchCompanies(){
+    const url = `${apiBase()}/api/companies?limit=12`;
+    try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.statusText);
+        return await res.json();
+    }catch(e){
+        console.error('Fetch companies error', e);
+        return FALLBACK_COMPANIES;
+    }
+}
+
+function renderCompanies(listEl, companies){
+    if(!listEl) return;
+    listEl.innerHTML = '';
+
+    if(!companies || !companies.length){
+        listEl.innerHTML = '<div class="company-placeholder">Sin compañías</div>';
+        return;
+    }
+
+    companies.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'company-item';
+        item.dataset.companyId = c.id || idx;
+        item.innerHTML = `
+            <div class="company-logo"><img src="${logoUrl(c)}" alt="${c.name}"></div>
+            <div class="company-rect">
+                <div class="company-name">${c.name}</div>
+                <div class="company-rating">${c.avg_rating ? `${c.avg_rating.toFixed(1)} / 100` : 'Sin rating'}</div>
+            </div>
+        `;
+        item.addEventListener('click', () => {
+            const cid = item.dataset.companyId;
+            window.location.href = `company.html?id=${cid}`;
+        });
+        listEl.appendChild(item);
+    });
+}
+
+function renderList(listEl, games, { emptyText = 'Sin resultados', statusBuilder } = {}){
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!games || !games.length){
+        listEl.innerHTML = `<div class="list-placeholder">${emptyText}</div>`;
+        return;
+    }
+
+    games.forEach(game => {
+        const gid = normalizeGameId(game);
+        const status = statusBuilder ? statusBuilder(game) : '';
+        const item = document.createElement('div');
+        item.className = 'list-item flex items-center gap-4';
+        item.setAttribute('data-game-id', gid);
+        item.innerHTML = `
+            <img src="${coverSmall(game)}" alt="${game.name}">
+            <div class="item-details">
+                <h4>${game.name}</h4>
+                ${status ? `<span class="status">${status}</span>` : ''}
+            </div>
+        `;
+        item.addEventListener('click', () => {
+            if (gid) window.location.href = `game.html?id=${gid}`;
+        });
+        listEl.appendChild(item);
+    });
+}
+
+function eventImage(ev){
+    const id = ev.event_logo ? ev.event_logo.image_id : '';
+    return id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${id}.jpg` : 'https://placehold.co/400x200/333/fff?text=Evento';
+}
+
+function formatDateTime(ts){
+    if (!ts) return '';
+    return new Date(ts*1000).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+async function fetchEvents(){
+    const url = `${apiBase()}/api/events?limit=15`;
+    try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.statusText);
+        return await res.json();
+    }catch(e){
+        console.error('Fetch events error', e);
+        return FALLBACK_EVENTS;
+    }
+}
+
+async function fetchNews(){
+    const url = `${apiBase()}/api/news?limit=12`;
+    try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        if(!data || !data.length) throw new Error('Empty news');
+        return data;
+    }catch(e){
+        console.error('Fetch news error', e);
+        return [];
+    }
+}
+
+function newsImage(item){
+    const id = item.pulse_image ? item.pulse_image.image_id : '';
+    return id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${id}.jpg` : 'https://placehold.co/640x360/222/fff?text=Noticia';
+}
+
+function mapPost(entry){
+    const isEvent = entry.start_time !== undefined;
+    return {
+        id: entry.id || entry.slug || Math.random().toString(36).slice(2),
+        title: isEvent ? entry.name : (entry.title || 'Noticia'),
+        body: entry.description || entry.summary || '',
+        date: isEvent ? entry.start_time : (entry.published_at || entry.updated_at || null),
+        image: isEvent ? eventImage(entry) : newsImage(entry),
+        tag: isEvent ? 'Evento' : 'Noticia',
+        url: entry.url || (entry.websites && entry.websites[0] ? entry.websites[0].url : '')
+    };
+}
+
+function renderEvents(gridEl, posts){
+    if(!gridEl) return;
+    gridEl.innerHTML = '';
+
+    if(!posts || !posts.length){
+        gridEl.innerHTML = '<div class="event-placeholder">Sin eventos o noticias</div>';
+        return;
+    }
+
+    posts.forEach(post => {
+        const card = document.createElement('div');
+        card.className = 'news-card';
+        card.innerHTML = `
+            <div class="news-head">
+                <span class="news-tag">${post.tag}</span>
+                <span class="news-date">${formatDateTime(post.date)}</span>
+            </div>
+            <div class="news-title">${post.title}</div>
+            <div class="news-media"><img src="${post.image}" alt="${post.title}"></div>
+            <div class="news-body">${post.body ? post.body.slice(0,180) + (post.body.length>180 ? '...' : '') : 'Sin descripción'}</div>
+            <div class="news-actions">
+                ${post.url ? `<button class="news-link" data-link>Ver más</button>` : ''}
+            </div>
+        `;
+        card.addEventListener('click', () => openEventDetail(post));
+        const linkBtn = card.querySelector('[data-link]');
+        if(linkBtn && post.url){
+            linkBtn.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(post.url, '_blank'); });
+        }
+        gridEl.appendChild(card);
+    });
+}
+
+async function loadRecentAndUpcoming(){
+    const recentEl = document.querySelector('[data-list="recent"]');
+    const upcomingEl = document.querySelector('[data-list="upcoming"]');
+    if (!recentEl && !upcomingEl) return;
+
+    const [recent, upcoming] = await Promise.all([
+        recentEl ? fetchWindow('recent', FALLBACK_RECENT) : Promise.resolve([]),
+        upcomingEl ? fetchWindow('upcoming', FALLBACK_UPCOMING) : Promise.resolve([])
+    ]);
+
+    if (recentEl){
+        renderList(recentEl, recent, {
+            emptyText: 'No hay lanzamientos en los últimos 15 días',
+            statusBuilder: (g) => g.first_release_date ? `Lanzado ${formatRelease(g.first_release_date)}` : ''
+        });
+    }
+
+    if (upcomingEl){
+        renderList(upcomingEl, upcoming, {
+            emptyText: 'No hay lanzamientos próximos en 15 días',
+            statusBuilder: (g) => g.first_release_date ? `Lanza ${formatRelease(g.first_release_date)}` : 'Muy pronto'
+        });
+    }
+}
+
 async function loadHeroSlider(){
     const hero = document.querySelector('.hero');
     if(!hero) return;
@@ -28,23 +331,36 @@ async function loadHeroSlider(){
     }catch(e){
         console.error('Hero fetch error', e);
         games = [
-            { name:'Star Wars Jedi: Survivor', cover:{ image_id:'co6f2e' } },
-            { name:'Baldur\'s Gate 3', cover:{ image_id:'co6n3j' } },
-            { name:'Elden Ring', cover:{ image_id:'co6ce1' } }
+            { name:'Game 1', slug:'game-1', cover:{ image_id:'co6f2e' } },
+            { name:'Game 2', slug:'game-2', cover:{ image_id:'co6n3j' } },
+            { name:'Game 3', slug:'game-3', cover:{ image_id:'co6ce1' } }
         ];
     }
 
     if(!games.length) return;
 
-    const slides = games.map(g=>({ title: g.name, img: heroImage(g), id: g.id || g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase()) }));
+    const slides = games.map(g=>{
+        const slug = g.slug || encodeURIComponent((g.name||'').replace(/\s+/g,'-').toLowerCase());
+        const id = g.id;
+        const href = id ? `game.html?id=${id}` : `game.html?slug=${slug}`;
+        return {
+            title: g.name,
+            img: heroImage(g),
+            id,
+            slug,
+            href
+        };
+    });
 
     hero.innerHTML = `
         <div class="hero-track">
             ${slides.map((s,i)=>`
-                <div class="hero-slide ${i===0?'active':''}" data-idx="${i}" data-id="${s.id}">
-                    <img src="${s.img}" alt="${s.title}" class="hero-img">
-                    <div class="hero-overlay"></div>
-                    <div class="hero-title">${s.title}</div>
+                <div class="hero-slide ${i===0?'active':''}" data-idx="${i}" data-href="${s.href}" data-id="${s.id || ''}" data-slug="${s.slug || ''}">
+                    <a class="hero-link" href="${s.href}" aria-label="${s.title}">
+                        <img src="${s.img}" alt="${s.title}" class="hero-img">
+                        <div class="hero-overlay"></div>
+                        <div class="hero-title">${s.title}</div>
+                    </a>
                 </div>
             `).join('')}
         </div>
@@ -73,12 +389,11 @@ async function loadHeroSlider(){
     nextBtn?.addEventListener('click', ()=> show(current+1));
     dotEls.forEach(dot=>dot.addEventListener('click', ()=> show(Number(dot.dataset.idx||0))));
 
-    // click to go to game detail
-    slideEls.forEach((el,i)=>{
+    slideEls.forEach((el)=>{
         el.style.cursor='pointer';
         el.addEventListener('click', ()=>{
-            const gid = slides[i].id;
-            if(gid) window.location.href = `game.html?id=${gid}`;
+            const href = el.getAttribute('data-href');
+            if(href) window.location.href = href;
         });
     });
 }
@@ -114,115 +429,144 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    loadHeroSlider();
+    (async () => {
+        const listEl = document.querySelector('[data-company-list]');
+        if (!listEl) return;
+        const companies = await fetchCompanies();
+        renderCompanies(listEl, companies);
+    })();
 
-    // Redirect to company page when clicking a company item
+    loadHeroSlider();
+    loadRecentAndUpcoming();
+
     const companyItems = document.querySelectorAll('.company-item');
-    companyItems.forEach((el, idx) => {
+    companyItems.forEach((el) => {
         el.style.cursor = 'pointer';
         el.addEventListener('click', () => {
-            // keep it simple: pass index as id for now
-            window.location.href = `company.html?id=${idx}`;
+            const cid = el.dataset.companyId || el.dataset.id || 0;
+            window.location.href = `company.html?id=${cid}`;
         });
     });
 
-    // Make other static lists clickable to game detail page
-    function makeClickableSelector(selector, titleSelector) {
-        const nodes = document.querySelectorAll(selector);
-        nodes.forEach(node => {
-            node.style.cursor = 'pointer';
-            node.addEventListener('click', (e) => {
-                // prevent double-handling if inside a link
-                if (e.target.closest('a')) return;
-                // try to get explicit data-game-id
-                const dataId = node.getAttribute('data-game-id') || node.getAttribute('data-id');
-                let gid = dataId;
-                if (!gid) {
-                    const titleEl = titleSelector ? node.querySelector(titleSelector) : node.querySelector('h4, .game-title, .ftitle');
-                    const title = titleEl ? titleEl.textContent.trim() : '';
-                    gid = title ? encodeURIComponent(title.replace(/\s+/g,'-').toLowerCase()) : null;
-                }
-                if (gid) window.location.href = `game.html?id=${gid}`;
-            });
-        });
-    }
-
-    // make recent/upcoming list items clickable
-    makeClickableSelector('.list-item', '.item-details h4');
-    // make event cards clickable (if they represent games)
-    makeClickableSelector('.event-card', '.event-content h4');
-    // make featured small cards clickable
     makeClickableSelector('.fcard', '.ftitle');
 
-    // Events overlay: open on 'Ver todos'
     const eventsSeeMore = document.querySelector('.events .see-more');
     const eventsOverlay = document.getElementById('eventsOverlay');
     const eventsFeedFull = document.getElementById('eventsFeedFull');
-    if (eventsSeeMore && eventsOverlay && eventsFeedFull) {
-        function openEventsOverlay() {
-            // sample events data; replace with API if needed
-            const events = [
-                {
-                    posted: 'POSTED ON: November 12, 2025',
-                    title: 'November 2025 Update',
-                    img: 'https://placehold.co/800x320/222/fff?text=Update+Image',
-                    summary: 'Bla bla bla bla bla bla bla bla bla bla bla bla bla...'
-                },
-                {
-                    posted: 'POSTED ON: November 07, 2025',
-                    title: 'Patch Notes',
-                    img: 'https://placehold.co/800x320/222/fff?text=Patch+Notes',
-                    summary: 'Detalles de correcciones y mejoras realizadas esta semana.'
-                },
-                {
-                    posted: 'POSTED ON: November 02, 2025',
-                    title: 'October Wrap-up',
-                    img: 'https://placehold.co/800x320/222/fff?text=Wrap+Up',
-                    summary: 'Resumen mensual de cambios, correcciones y próximos lanzamientos.'
+    const moreBtn = document.querySelector('.events .scroll-indicator');
+    let postsCache = [];
+    let visibleCount = 3;
+
+    function renderDetail(post){
+        const body = post.body || 'Sin descripción';
+        const linkBtn = post.url ? `<button class="read-more-btn" data-event-link>Visitar enlace</button>` : '';
+        eventsFeedFull.innerHTML = `
+            <div class="event-detail">
+                <div class="detail-meta">${formatDateTime(post.date)}</div>
+                <h3>${post.title}</h3>
+                <img class="detail-hero" src="${post.image}" alt="${post.title}">
+                <div class="detail-body">${body}</div>
+                <div class="detail-actions">${linkBtn}</div>
+            </div>
+        `;
+        const btn = eventsFeedFull.querySelector('[data-event-link]');
+        if(btn && post.url){
+            btn.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(post.url, '_blank'); });
+        }
+    }
+
+    function openEventDetail(post){
+        if(!eventsOverlay || !eventsFeedFull){
+            return;
+        }
+        if(!post){
+            eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
+        }else{
+            renderDetail(post);
+        }
+        eventsOverlay.classList.remove('hidden');
+        eventsOverlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+    }
+
+    function openEventsList(allPosts){
+        if(!eventsOverlay || !eventsFeedFull) return;
+        if(!allPosts || !allPosts.length){
+            eventsFeedFull.innerHTML = '<div class="event-placeholder">Sin eventos para mostrar</div>';
+        } else {
+            eventsFeedFull.innerHTML = allPosts.map(post => `
+                <div class="event-detail">
+                    <div class="detail-meta">${formatDateTime(post.date)}</div>
+                    <h3>${post.title}</h3>
+                    <img class="detail-hero" src="${post.image}" alt="${post.title}">
+                    <div class="detail-body">${post.body || 'Sin descripción'}</div>
+                    <div class="detail-actions">${post.url ? `<button class="read-more-btn" data-event-link="${post.url}">Visitar enlace</button>` : ''}</div>
+                </div>
+            `).join('');
+
+            eventsFeedFull.querySelectorAll('[data-event-link]').forEach(btn => {
+                const link = btn.getAttribute('data-event-link');
+                if(link){
+                    btn.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(link, '_blank'); });
                 }
-            ];
-
-            eventsFeedFull.innerHTML = '';
-            events.forEach(ev => {
-                const post = document.createElement('article');
-                post.className = 'event-post';
-                post.innerHTML = `
-                    <div class="ep-header">
-                        <div>
-                            <div class="ep-meta">${ev.posted}</div>
-                            <div class="ep-title">${ev.title}</div>
-                        </div>
-                        <div class="ep-icons">
-                            <div class="icon"><i class="fab fa-github"></i></div>
-                            <div class="icon"><i class="fas fa-share"></i></div>
-                        </div>
-                    </div>
-                    <img class="ep-image" src="${ev.img}" alt="${ev.title}">
-                    <div class="ep-summary">${ev.summary}</div>
-                `;
-                eventsFeedFull.appendChild(post);
             });
-
-            eventsOverlay.classList.remove('hidden');
-            eventsOverlay.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
         }
 
-        eventsSeeMore.addEventListener('click', (e) => { e.preventDefault(); openEventsOverlay(); });
-        eventsOverlay.querySelector('[data-close]')?.addEventListener('click', () => {
-            eventsOverlay.classList.add('hidden');
-            eventsOverlay.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        });
-        eventsOverlay.querySelector('.events-close')?.addEventListener('click', () => {
-            eventsOverlay.classList.add('hidden');
-            eventsOverlay.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') {
-            eventsOverlay.classList.add('hidden');
-            eventsOverlay.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        }});
+        eventsOverlay.classList.remove('hidden');
+        eventsOverlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
     }
+
+    function updateEventsGrid(){
+        const grid = document.querySelector('[data-events-grid]');
+        if(!grid) return;
+        const slice = postsCache.slice(0, visibleCount);
+        renderEvents(grid, slice);
+        if(moreBtn){
+            const hasMore = visibleCount < postsCache.length;
+            moreBtn.style.display = postsCache.length ? 'block' : 'none';
+            moreBtn.classList.toggle('disabled', !hasMore);
+        }
+    }
+
+    async function loadEventsIntoPage(){
+        const grid = document.querySelector('[data-events-grid]');
+        const eventsSection = document.querySelector('.events');
+        if(!grid) return;
+        const [events, news] = await Promise.all([fetchEvents(), fetchNews()]);
+        postsCache = [...events.map(mapPost), ...news.map(mapPost)]
+            .sort((a,b)=> (b.date||0) - (a.date||0))
+            .slice(0,20);
+        visibleCount = Math.min(visibleCount, postsCache.length || 0) || 3;
+        updateEventsGrid();
+        if(eventsSection){
+            const hasContent = postsCache.length > 0;
+            eventsSection.style.display = hasContent ? '' : 'none';
+        }
+    }
+
+    if (eventsSeeMore && eventsOverlay && eventsFeedFull) {
+        const openEventsOverlay = () => openEventsList(postsCache);
+
+        eventsSeeMore.addEventListener('click', (e) => { e.preventDefault(); openEventsOverlay(); });
+        const closeOverlay = () => {
+            eventsOverlay.classList.add('hidden');
+            eventsOverlay.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+        };
+
+        eventsOverlay.querySelector('[data-close]')?.addEventListener('click', closeOverlay);
+        eventsOverlay.querySelector('.events-close')?.addEventListener('click', closeOverlay);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOverlay(); });
+    }
+
+    if(moreBtn){
+        moreBtn.style.cursor = 'pointer';
+        moreBtn.addEventListener('click', ()=>{
+            visibleCount = Math.min(visibleCount + 3, postsCache.length);
+            updateEventsGrid();
+        });
+    }
+
+    loadEventsIntoPage();
 });

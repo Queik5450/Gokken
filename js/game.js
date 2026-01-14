@@ -32,23 +32,28 @@ function renderMain(item, name){
     const poster = item.poster || item.thumb || '';
     const src = item.src;
     return `
-      <div class="main-video" data-type="video" data-src="${src}">
-        ${poster ? `<img class="video-poster" src="${poster}" alt="${name} trailer">` : ''}
-        <button class="play-btn" aria-label="Reproducir video">▶</button>
+      <div class="main-video relative aspect-video bg-black overflow-hidden" data-type="video" data-src="${src}">
+        ${poster ? `<img class="video-poster absolute inset-0 w-full h-full object-cover" src="${poster}" alt="${name} trailer">` : ''}
+        <button class="play-btn absolute inset-0 flex items-center justify-center text-white text-4xl bg-black/40 hover:bg-black/60 transition" aria-label="Reproducir video">▶</button>
       </div>
     `;
   }
-  return `<img src="${item.src}" alt="${item.alt || name}">`;
+  return `<img class="w-full h-full object-cover" src="${item.src}" alt="${item.alt || name}">`;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   const idParam = getQueryParam('id');
+  const slugParam = getQueryParam('slug');
   const root = document.getElementById('gameRoot');
   if(!root) return;
 
-  // Decide si es id numérico o slug por nombre
   const isNumeric = idParam && /^\d+$/.test(idParam);
-  const qs = isNumeric ? `id=${idParam}` : `name=${encodeURIComponent(idParam||'')}`;
+  const effectiveSlug = slugParam || (!isNumeric && idParam ? idParam : null);
+  const qs = isNumeric
+    ? `id=${idParam}`
+    : effectiveSlug
+      ? `slug=${encodeURIComponent(effectiveSlug)}`
+      : `name=${encodeURIComponent(idParam||'')}`;
 
   let game;
   try{
@@ -63,21 +68,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const name = game.name || 'Juego';
   const poster = imgUrl('t_cover_big', game.cover?.image_id);
-  // Hero: usa artwork o screenshot grande si existe
   const heroId = (game.artworks?.[0]?.image_id) || (game.screenshots?.[0]?.image_id) || game.cover?.image_id;
   const hero = imgUrl('t_screenshot_big', heroId);
-  const rating = Math.round(Number(game.rating||0))/10; // normaliza a escala 0-10 si fuese 0-100
+  const rating100 = Number(game.rating || 0);
+  const rating10 = rating100 ? (rating100/10).toFixed(1) : 'N/A';
   const companies = (game.involved_companies||[]).map(ic=>ic.company?.name).filter(Boolean);
-  const genres = (game.genres||[]).map(g=>g.name);
-  const platforms = (game.platforms||[]).map(p=>p.name);
-  const releaseHuman = (game.release_dates?.[0]?.human) || (game.first_release_date ? new Date(game.first_release_date*1000).toLocaleDateString() : 'N/D');
+  const genres = (game.genres||[]).map(g=>({ id:g.id, name:g.name })).filter(g=>g.name);
+  const platforms = (game.platforms||[]).map(p=>({ id:p.id, name:p.name })).filter(p=>p.name);
+  const languageSupports = Array.from(new Set((game.language_supports||[]).map(ls=>ls.language?.name).filter(Boolean)));
+  const releaseHuman = (game.release_dates?.[0]?.human) || (game.first_release_date ? new Date(game.first_release_date*1000).toLocaleDateString('es-ES') : 'N/D');
+  const releaseTsMs = game.first_release_date ? game.first_release_date * 1000 : null;
+  const isFutureRelease = releaseTsMs && releaseTsMs > Date.now();
   const screenshots = (game.screenshots||[]).slice(0,8);
   const artworks = (game.artworks||[]).slice(0,4);
   const videoId = (game.videos||[])[0]?.video_id || '';
   const short = game.summary || '';
   const long = game.storyline || game.summary || '';
 
-  // Construimos una galería ordenada: video (si hay), luego screenshots, luego artworks, luego cover/hero
   const media = [];
   if(videoId){
     media.push({ type:'video', src: toEmbed(videoId), thumb: youtubeThumb(videoId), poster: youtubeThumb(videoId), alt: `${name} trailer` });
@@ -89,48 +96,106 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   root.innerHTML = `
-    <div class="game-detail">
-      <div class="game-hero"><img src="${hero}" alt="hero"></div>
-      <div class="game-meta">
-        <div class="left">
-          <h1 class="game-title">${name}</h1>
-          <div class="meta-grid">
-            <div><strong>Desarrolladora</strong><div>${companies[0]||'N/D'}</div></div>
-            <div><strong>Publisher</strong><div>${companies[1]||companies[0]||'N/D'}</div></div>
-            <div><strong>Compañía</strong><div>${companies.join(', ')||'N/D'}</div></div>
-            <div><strong>Lanzado el</strong><div>${releaseHuman}</div></div>
+    <div class="game-page space-y-10">
+      <section class="hero-top relative w-full min-h-[360px] lg:min-h-[440px] bg-cover bg-center flex items-end" style="background-image:url('${hero}')">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/90"></div>
+        <div class="hero-top-content relative z-10 max-w-6xl mx-auto px-4 pb-10 pt-16 w-full flex flex-col gap-3">
+          <h1 class="text-3xl md:text-4xl font-bold uppercase">${name}</h1>
+          <div class="hero-meta-row grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-200">
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Desarrolladora</span>${companies[0]||'N/D'}</div>
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Publisher</span>${companies[1]||companies[0]||'N/D'}</div>
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Compañía</span>${companies.join(', ')||'N/D'}</div>
+            <div><span class="block text-xs uppercase tracking-wide text-gray-400">Lanzado el</span>${releaseHuman}</div>
           </div>
+          ${isFutureRelease ? `<div class="release-countdown inline-block bg-black/60 border border-white/10 px-4 py-2 rounded-lg font-semibold" id="releaseCountdown"></div>` : ''}
         </div>
-      </div>
+      </section>
 
-      <div class="media-row">
-        <div id="mainMedia" class="main-media">${renderMain(media[0], name)}</div>
-        <div class="thumbs">${media.map((m,idx)=>`
-          <button class="thumb ${idx===0?'active':''}" data-idx="${idx}"><img src="${m.thumb}" alt="thumb ${idx+1}"></button>
-        `).join('')}</div>
-      </div>
+      <div class="max-w-6xl mx-auto px-4 space-y-8">
+        <section class="game-content grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+          <div class="media-column space-y-3">
+            <div id="mainMedia" class="main-media modern rounded-xl overflow-hidden border border-border bg-black/40">${renderMain(media[0], name)}</div>
+            <div class="thumbs modern flex flex-wrap gap-3">${media.map((m,idx)=>`
+              <button class="thumb ${idx===0?'active':''} border border-border rounded-lg overflow-hidden focus:outline-none" data-idx="${idx}"><img class="w-24 h-14 object-cover" src="${m.thumb}" alt="thumb ${idx+1}"></button>
+            `).join('')}</div>
+          </div>
+          <div class="info-column space-y-4">
+            <div class="info-block bg-panel border border-border rounded-lg p-4 space-y-2">
+              <h4 class="text-lg font-semibold">Resumen</h4>
+              <p class="text-gray-200 text-sm leading-relaxed">${short || 'Sin resumen disponible.'}</p>
+            </div>
+            <div class="info-grid grid grid-cols-2 gap-3">
+              <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Géneros</div>
+                <div class="pill-row flex flex-wrap gap-2">${genres.map(g=>{
+                  const query = g.id ? `genreId=${g.id}&genreName=${encodeURIComponent(g.name)}` : `q=${encodeURIComponent(g.name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${g.name}</a>`;
+                }).join('') || '<span class="pill">N/D</span>'}</div>
+              </div>
+              <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Plataformas</div>
+                <div class="pill-row flex flex-wrap gap-2">${platforms.map(p=>{
+                  const query = p.id ? `platformId=${p.id}&platformName=${encodeURIComponent(p.name)}` : `q=${encodeURIComponent(p.name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${p.name}</a>`;
+                }).join('') || '<span class="pill">N/D</span>'}</div>
+              </div>
+              <div class="stat-box bg-panel border border-border rounded-lg p-4 flex flex-col gap-2 items-start">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Calificación</div>
+                <div class="stat-value text-2xl font-bold">${rating10}</div>
+              </div>
+              <div class="stat-box bg-panel border border-border rounded-lg p-4 flex flex-col gap-2 items-start">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">Clasificación</div>
+                <div class="badge-class inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-white font-bold">${rating100 >= 180 ? '18' : '18'}</div>
+              </div>
+            </div>
+            <div class="info-block bg-panel border border-border rounded-lg p-4 space-y-2">
+              <h4 class="text-lg font-semibold">Idiomas</h4>
+              <div class="pill-row flex flex-wrap gap-2">
+                ${languageSupports.map(lang=>`<span class="pill inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm">${lang}</span>`).join('') || '<span class="pill">N/D</span>'}
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div class="game-body">
-        <div class="col-left">
-          <p class="short">${short}</p>
-          <h4>Géneros</h4>
-          <div class="tags">${genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
-          <h4>Plataformas</h4>
-          <div class="tags">${platforms.map(p=>`<span class="tag platform">${p}</span>`).join('')}</div>
-          <h4>Lenguajes</h4>
-          <div class="tags"><span class="tag">ENG</span></div>
-          <h4>Puntuación</h4>
-          <div class="score-box">${(rating||0).toFixed(1)}</div>
-        </div>
-        <div class="col-right">
-          <h4>Descripción</h4>
-          <p>${String(long).replace(/\n/g,'<br>')}</p>
-        </div>
+        <section class="game-description bg-panel border border-border rounded-lg p-4 space-y-2">
+          <h4 class="text-lg font-semibold">Historia</h4>
+          <p class="text-gray-200 leading-relaxed text-sm">${String(long||'Sin descripción').replace(/\n/g,'<br>')}</p>
+        </section>
       </div>
     </div>
   `;
 
-  // Interacciones de galería
+  if(isFutureRelease){
+    const cdEl = document.getElementById('releaseCountdown');
+    const formatCountdown = (ms)=>{
+      const totalSeconds = Math.max(0, Math.floor(ms/1000));
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      if(days > 0) return `${days}d ${hours}h ${minutes}m`;
+      if(hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+      return `${minutes}m ${seconds}s`;
+    };
+    const tick = ()=>{
+      if(!cdEl) return;
+      const now = Date.now();
+      const diff = releaseTsMs - now;
+      if(diff <= 0){
+        cdEl.textContent = 'Lanza hoy';
+        return true;
+      }
+      cdEl.textContent = `Lanza en ${formatCountdown(diff)}`;
+      return false;
+    };
+    let stop = tick();
+    if(!stop){
+      const timer = setInterval(()=>{
+        if(tick()) clearInterval(timer);
+      }, 1000);
+    }
+  }
+
   const mainEl = document.getElementById('mainMedia');
   const thumbEls = root.querySelectorAll('.thumb');
   function mountVideoPlay(){
