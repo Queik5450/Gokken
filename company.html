@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Juego - Gokken</title>
+  <title>Compañía - Gokken</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,7 +30,7 @@
 <body class="bg-neutral-950 text-gray-100 font-sans">
   <header class="bg-surface/80 backdrop-blur border-b border-border">
     <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
-      <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="mainPage.html" aria-label="Volver a la página principal" data-i18n-aria-label="header.homeAria">Gokken</a></div>
+      <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="index.html" aria-label="Volver a la página principal" data-i18n-aria-label="header.homeAria">Gokken</a></div>
       <div class="search-bar flex-1">
         <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
           <input placeholder="Buscar" data-i18n-placeholder="search.placeholder" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
@@ -47,12 +47,14 @@
   </header>
 
   <main class="pt-6">
-    <div id="gameRoot" class="game-page w-full">
-      <!-- contenido montado por js -->
+    <div class="max-w-6xl mx-auto px-4">
+      <div id="companyRoot" class="company-page">
+        <!-- contenido será poblado por js -->
+      </div>
     </div>
   </main>
 
-  <footer class="bg-panel border-t border-border">
+  <footer class="bg-panel border-t border-border mt-10">
     <div class="footer-content max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-gray-300">
       <div class="contact-social flex items-center gap-3"><span class="font-semibold" data-i18n="footer.contacts">Contactos</span><div class="social-icons text-primary text-xl"><i class="fab fa-discord"></i></div></div>
       <div class="footer-info"><span data-i18n="footer.aboutPrefix">Acerca de:</span> <a class="text-primary hover:underline" href="about.html">Gokken</a></div>
@@ -62,6 +64,6 @@
 
   <script src="../js/i18n.js"></script>
   <script src="../js/search.js"></script>
-  <script src="../js/game.js"></script>
+  <script src="../js/company.js"></script>
 </body>
 </html>
