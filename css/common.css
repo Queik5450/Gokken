@@ -38,6 +38,22 @@ ul {
     font-size: 0.95rem;
 }
 
+header {
+    position: relative;
+    z-index: 50;
+    overflow: visible;
+}
+
+.search-bar {
+    position: relative;
+    z-index: 60;
+}
+
+.search-input-wrapper {
+    position: relative;
+    z-index: 60;
+}
+
 .search-suggestions {
     position: absolute;
     left: 0;
@@ -49,7 +65,7 @@ ul {
     border-radius: 6px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    z-index: 999;
+    z-index: 1000;
     display: none;
 }
 
