@@ -8,19 +8,7 @@ function qs(name, url = window.location.href) {
 }
 
 function apiBase(){
-    const hinted = window.__API_BASE__;
-    if (hinted) return hinted.replace(/\/$/, '');
-    const { protocol, hostname, port } = window.location;
-    const proto = protocol === 'https:' ? 'https' : 'http';
-    const host = hostname || 'localhost';
-    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-
-    if (isLocal) {
-        return `${proto}://localhost:8080`;
-    }
-
-    const usePort = port ? `:${port}` : '';
-    return `${proto}://${host}${usePort}`;
+    return `https://gokken-seven.vercel.app`;
 }
 
 const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);

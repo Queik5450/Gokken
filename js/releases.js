@@ -1,10 +1,5 @@
 function apiBase(){
-    const hinted = window.__API_BASE__;
-    if (hinted) return hinted.replace(/\/$/, '');
-    const { protocol, hostname } = window.location;
-    const host = hostname || 'localhost';
-    const port = 8080;
-    return `${protocol.includes('http') ? 'http' : 'http'}://${host}:${port}`;
+    return `https://gokken-seven.vercel.app`;
 }
 
 function qs(name, url = window.location.href) {

@@ -8,9 +8,7 @@ function getQueryParam(name, url = window.location.href) {
 }
 
 function apiBase(){
-  const { protocol, hostname } = window.location;
-  const host = hostname || 'localhost';
-  return `${protocol.includes('http')? 'http' : 'http'}://${host}:8080`;
+  return `https://gokken-seven.vercel.app`;
 }
 
 function imgUrl(type, id){
