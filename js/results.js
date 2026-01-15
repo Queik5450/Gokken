@@ -55,12 +55,16 @@ async function fetchResults(query){
         return await res.json();
     } catch (err) {
         console.warn('Combined search failed, attempting per-entity fallback', err);
+        let sawOffline = false;
         const safeFetch = async (path) => {
             try {
                 const r = await fetch(`${base}${path}`);
                 if(!r.ok) throw new Error(r.statusText);
                 return await r.json();
             } catch (e) {
+                if (e instanceof TypeError || String(e).toLowerCase().includes('failed to fetch')) {
+                    sawOffline = true;
+                }
                 console.warn('Fallback fetch failed', path, e);
                 return [];
             }
@@ -72,7 +76,8 @@ async function fetchResults(query){
             safeFetch(`/api/search/platforms?q=${encodeURIComponent(query)}&limit=20`)
         ]);
 
-        return { games, companies, platforms };
+        const allEmpty = (!games || games.length === 0) && (!companies || companies.length === 0) && (!platforms || platforms.length === 0);
+        return { games, companies, platforms, __offline: sawOffline && allEmpty };
     }
 }
 

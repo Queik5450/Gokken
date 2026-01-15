@@ -14,21 +14,25 @@ function apiBase(){
     return `${proto}://${host}${usePort}`;
 }
 
-async function fetchSuggestions(q){
+async function fetchSuggestions(q, signal){
     const base = apiBase();
     const urlAll = `${base}/api/search/all?q=${encodeURIComponent(q)}&limit=6`;
     try {
-        const res = await fetch(urlAll);
+        const res = await fetch(urlAll, { signal });
         if(!res.ok) throw new Error(res.statusText);
         return await res.json();
     } catch (err) {
         console.warn('Suggest combined failed, falling back per entity', err);
+        let sawOffline = false;
         const safeFetch = async (path) => {
             try {
-                const r = await fetch(`${base}${path}`);
+                const r = await fetch(`${base}${path}`, { signal });
                 if(!r.ok) throw new Error(r.statusText);
                 return await r.json();
             } catch (e) {
+                if (e instanceof TypeError || String(e).toLowerCase().includes('failed to fetch')) {
+                    sawOffline = true;
+                }
                 console.warn('Suggest fallback failed', path, e);
                 return [];
             }
@@ -39,7 +43,8 @@ async function fetchSuggestions(q){
             safeFetch(`/api/search/companies?q=${encodeURIComponent(q)}&limit=3`),
             safeFetch(`/api/search/platforms?q=${encodeURIComponent(q)}&limit=3`)
         ]);
-        return { games, companies, platforms };
+        const allEmpty = (!games || games.length === 0) && (!companies || companies.length === 0) && (!platforms || platforms.length === 0);
+        return { games, companies, platforms, __offline: sawOffline && allEmpty };
     }
 }
 
@@ -57,12 +62,30 @@ function setupNavSearch(){
     const suggestionCache = new Map(); // q -> { at, data }
     const ttlMs = 60 * 1000;
     let inFlight = null;
+    let controller = null;
 
     function hideSuggestions(){ box.style.display = 'none'; }
     function showSuggestions(){ box.style.display = box.innerHTML.trim() ? 'block' : 'none'; }
 
     function renderSuggestions(payload){
         if(!payload){ box.innerHTML=''; hideSuggestions(); return; }
+        if (payload.__offline) {
+            const tr = (key, fallback) => (typeof window.t === 'function' ? window.t(key, fallback) : fallback);
+            const title = tr('search.apiOfflineTitle', 'API apagada');
+            const meta = tr('search.apiOfflineMeta', 'Inicia el backend en http://localhost:8080');
+            box.innerHTML = `
+                <div class="search-suggestion" data-href="">
+                    <span class="ss-tag">Info</span>
+                    <img src="https://placehold.co/46x46/222/fff?text=!" alt="offline">
+                    <div class="ss-main">
+                        <div class="ss-title">${title}</div>
+                        <div class="ss-meta">${meta}</div>
+                    </div>
+                </div>
+            `;
+            showSuggestions();
+            return;
+        }
         const games = payload.games || payload; // support old array shape
         const companies = payload.companies || [];
         const platforms = payload.platforms || [];
@@ -134,7 +157,11 @@ function setupNavSearch(){
         const ticket = Symbol('req');
         inFlight = ticket;
         try{
-            const results = await fetchSuggestions(q);
+            if (controller) controller.abort();
+            controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2500);
+            const results = await fetchSuggestions(q, controller.signal);
+            clearTimeout(timeoutId);
             if(inFlight !== ticket) return; // stale
             suggestionCache.set(q, { at: Date.now(), data: results });
             renderSuggestions(results);

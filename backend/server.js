@@ -10,6 +10,39 @@ const Parser = require('rss-parser');
 const app = express();
 app.use(cors());
 
+// Simple in-memory cache to reduce calls to IGDB/RSS and avoid 429 rate limiting.
+const memoryCache = new Map();
+
+function cacheGetWithStale(key, maxStaleMs = 0) {
+    const entry = memoryCache.get(key);
+    if (!entry) return null;
+    const now = Date.now();
+    if (now <= entry.expiresAt) return entry.value;
+    if (maxStaleMs > 0 && now - entry.expiresAt <= maxStaleMs) return entry.value;
+    return null;
+}
+
+function cacheSet(key, value, ttlMs) {
+    memoryCache.set(key, { value, expiresAt: Date.now() + ttlMs });
+}
+
+function withTimeout(promise, ms, fallback) {
+    let timer;
+    const timeout = new Promise((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+    });
+    return Promise.race([
+        promise.then((value) => {
+            clearTimeout(timer);
+            return value;
+        }).catch(() => {
+            clearTimeout(timer);
+            return fallback;
+        }),
+        timeout
+    ]);
+}
+
 const rssParser = new Parser({
     timeout: 10000,
     headers: {
@@ -84,21 +117,8 @@ let rssNewsCache = {
     en: { at: 0, ttlMs: 10 * 60 * 1000, items: [] }
 };
 
-const memoryCache = new Map(); // key -> { at, ttlMs, data }
-
-function cacheGet(key){
-    const entry = memoryCache.get(key);
-    if(!entry) return null;
-    const now = Date.now();
-    if(now - entry.at > entry.ttlMs){
-        memoryCache.delete(key);
-        return null;
-    }
-    return entry.data;
-}
-
-function cacheSet(key, data, ttlMs){
-    memoryCache.set(key, { at: Date.now(), ttlMs, data });
+function cacheGet(key) {
+    return cacheGetWithStale(key, 0);
 }
 
 function sleep(ms){
@@ -184,7 +204,7 @@ async function getAccessToken() {
     if (accessToken && Date.now() < tokenExpiry) return accessToken;
 
     const url = `https://id.twitch.tv/oauth2/token?client_id=${process.env.IGDB_CLIENT_ID}&client_secret=${process.env.IGDB_CLIENT_SECRET}&grant_type=client_credentials`;
-    const response = await axios.post(url);
+    const response = await axios.post(url, null, { timeout: 8000 });
     
     accessToken = response.data.access_token;
     tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000; 
@@ -196,6 +216,7 @@ async function igdbQuery(resource, query) {
     const request = () => axios({
         url: `https://api.igdb.com/v4/${resource}`,
         method: 'POST',
+        timeout: 8000,
         headers: {
             'Client-ID': process.env.IGDB_CLIENT_ID,
             'Authorization': `Bearer ${token}`,
@@ -219,41 +240,38 @@ async function igdbQuery(resource, query) {
 }
 
 app.get('/api/top-games', async (req, res) => {
-    try {
-        const limit = Number(req.query.limit || 10);
-        const order = req.query.order === 'new' ? 'first_release_date desc' : 'rating desc';
-        const cacheKey = `top-games:${order}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
+    const limit = Number(req.query.limit || 10);
+    const order = req.query.order === 'new' ? 'first_release_date desc' : 'rating desc';
+    const cacheKey = `top-games:${order}:${Math.min(Math.max(limit, 1), 100)}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
 
+    try {
         const data = await igdbQuery('games', `
             fields id, name, cover.image_id, rating, rating_count, slug, first_release_date, genres.name, platforms.name;
             sort ${order};
             where rating != null & cover != null & rating_count > 50;
             limit ${Math.min(Math.max(limit,1),100)};
         `);
-        cacheSet(cacheKey, data, 5 * 60 * 1000);
+        cacheSet(cacheKey, data, 15 * 60 * 1000);
         res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Top games failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
         res.status(500).json({ error: 'Failed to fetch games' });
     }
 });
 
 app.get('/api/games/recent', async (req, res) => {
+    const windowDays = Number(req.query.days || 15);
+    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
+    const cacheKey = `games-recent:${windowDays}:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
     try {
-        const windowDays = Number(req.query.days || 15);
-        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
         const now = Math.floor(Date.now() / 1000);
         const since = now - (windowDays * 86400);
-
-        const cacheKey = `recent:${windowDays}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
 
         const data = await igdbQuery('games', `
             fields name, cover.image_id, first_release_date, release_dates.human, slug, id;
@@ -261,27 +279,25 @@ app.get('/api/games/recent', async (req, res) => {
             sort first_release_date desc;
             limit ${limit};
         `);
-
-        cacheSet(cacheKey, data, 3 * 60 * 1000);
+        cacheSet(cacheKey, data, 10 * 60 * 1000);
         res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Recent games failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
         res.status(500).json({ error: 'Failed to fetch recent games' });
     }
 });
 
 app.get('/api/games/upcoming', async (req, res) => {
+    const windowDays = Number(req.query.days || 15);
+    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
+    const cacheKey = `games-upcoming:${windowDays}:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
     try {
-        const windowDays = Number(req.query.days || 15);
-        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 100);
         const now = Math.floor(Date.now() / 1000);
         const until = now + (windowDays * 86400);
-
-        const cacheKey = `upcoming:${windowDays}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
 
         const data = await igdbQuery('games', `
             fields name, cover.image_id, first_release_date, release_dates.human, slug, id;
@@ -289,18 +305,22 @@ app.get('/api/games/upcoming', async (req, res) => {
             sort first_release_date asc;
             limit ${limit};
         `);
-
-        cacheSet(cacheKey, data, 3 * 60 * 1000);
+        cacheSet(cacheKey, data, 10 * 60 * 1000);
         res.json(data);
     } catch (error) {
-        console.error(error);
+        console.error('Upcoming games failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
         res.status(500).json({ error: 'Failed to fetch upcoming games' });
     }
 });
 
 app.get('/api/companies', async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+    const cacheKey = `companies:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
     try {
-        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
 
         const companies = await igdbQuery('companies', `
             fields id, name, slug, logo.image_id;
@@ -313,22 +333,27 @@ app.get('/api/companies', async (req, res) => {
         const ratingMap = {};
 
         if (ids.length) {
-            const games = await igdbQuery('games', `
-                fields rating, involved_companies.company;
-                where rating != null & involved_companies.company = (${ids.join(',')});
-                limit 500;
-            `);
+            try {
+                const games = await igdbQuery('games', `
+                    fields rating, involved_companies.company;
+                    where rating != null & involved_companies.company = (${ids.join(',')});
+                    limit 500;
+                `);
 
-            games.forEach(game => {
-                if (!game.rating || !Array.isArray(game.involved_companies)) return;
-                game.involved_companies.forEach(ic => {
-                    const cid = ic && (ic.company || ic);
-                    if (!cid) return;
-                    if (!ratingMap[cid]) ratingMap[cid] = { sum: 0, count: 0 };
-                    ratingMap[cid].sum += game.rating;
-                    ratingMap[cid].count += 1;
+                (games || []).forEach(game => {
+                    if (!game?.rating || !Array.isArray(game.involved_companies)) return;
+                    game.involved_companies.forEach(ic => {
+                        const cid = ic && (ic.company || ic);
+                        if (!cid) return;
+                        if (!ratingMap[cid]) ratingMap[cid] = { sum: 0, count: 0 };
+                        ratingMap[cid].sum += game.rating;
+                        ratingMap[cid].count += 1;
+                    });
                 });
-            });
+            } catch (e) {
+                // If IGDB rate-limits, still return companies (without ratings) quickly.
+                console.warn('Companies rating enrichment skipped', e?.response?.data || e.message || e);
+            }
         }
 
         const enriched = companies.map(c => {
@@ -344,10 +369,82 @@ app.get('/api/companies', async (req, res) => {
             };
         });
 
+        cacheSet(cacheKey, enriched, 15 * 60 * 1000);
         res.json(enriched);
     } catch (error) {
-        console.error(error);
+        console.error('Companies failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
         res.status(500).json({ error: 'Failed to fetch companies' });
+    }
+});
+
+app.get('/api/companies/all', async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+    const page = Math.max(Number(req.query.page || 1), 1);
+    const cacheKey = `companies-all:${page}:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
+    try {
+        const offset = (page - 1) * limit;
+
+        const companies = await igdbQuery('companies', `
+            fields id, name, slug, logo.image_id;
+            where logo != null;
+            sort name asc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = Array.isArray(companies) && companies.length > limit;
+        const pageItems = hasMore ? companies.slice(0, limit) : (companies || []);
+
+        const ids = pageItems.map(c => c.id).filter(Boolean);
+        const ratingMap = {};
+
+        if (ids.length) {
+            try {
+                const games = await igdbQuery('games', `
+                    fields rating, involved_companies.company;
+                    where rating != null & involved_companies.company = (${ids.join(',')});
+                    limit 500;
+                `);
+
+                (games || []).forEach(game => {
+                    if (!game?.rating || !Array.isArray(game.involved_companies)) return;
+                    game.involved_companies.forEach(ic => {
+                        const cid = ic && (ic.company || ic);
+                        if (!cid) return;
+                        if (!ratingMap[cid]) ratingMap[cid] = { sum: 0, count: 0 };
+                        ratingMap[cid].sum += game.rating;
+                        ratingMap[cid].count += 1;
+                    });
+                });
+            } catch (e) {
+                console.warn('Companies-all rating enrichment skipped', e?.response?.data || e.message || e);
+            }
+        }
+
+        const enriched = pageItems.map(c => {
+            const entry = ratingMap[c.id];
+            const avg = entry && entry.count ? entry.sum / entry.count : null;
+            return {
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                logo: c.logo,
+                avg_rating: avg,
+                rating_count: entry ? entry.count : 0
+            };
+        });
+
+        const payload = { items: enriched, hasMore, page, limit };
+        cacheSet(cacheKey, payload, 15 * 60 * 1000);
+        res.json(payload);
+    } catch (error) {
+        console.error('Companies list failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
+        res.status(200).json({ items: [], hasMore: false, page: Math.max(Number(req.query.page || 1), 1), limit: Math.min(Math.max(Number(req.query.limit || 30), 1), 50) });
     }
 });
 
@@ -395,19 +492,16 @@ app.get('/api/search/games', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
-        const cacheKey = `search:games:${q}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
+        const cacheKey = `search:games:${q.toLowerCase()}:${limit}`;
+        const cached = cacheGetWithStale(cacheKey, 5 * 60 * 1000);
+        if (cached) return res.json(cached);
 
-        const data = await igdbQuery('games', `
+        const data = await withTimeout(igdbQuery('games', `
             fields id, name, slug, cover.image_id, rating, first_release_date;
             search "${q}";
             limit ${limit};
-        `);
-
-        cacheSet(cacheKey, data, 90 * 1000);
+        `), 3500, []);
+        cacheSet(cacheKey, data, 2 * 60 * 1000);
         res.json(data);
     } catch (error) {
         console.error('Search games failed', error?.response?.data || error.message || error);
@@ -421,27 +515,25 @@ app.get('/api/search/companies', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
-        const cacheKey = `search:companies:${q}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
+        const cacheKey = `search:companies:${q.toLowerCase()}:${limit}`;
+        const cached = cacheGetWithStale(cacheKey, 5 * 60 * 1000);
+        if (cached) return res.json(cached);
 
-        let data = await igdbQuery('companies', `
+        let data = await withTimeout(igdbQuery('companies', `
             fields id, name, slug, logo.image_id, country, start_date;
             search "${q}";
             limit ${limit};
-        `);
+        `), 3500, []);
 
         if(!data || data.length === 0){
-            data = await igdbQuery('companies', `
+            data = await withTimeout(igdbQuery('companies', `
                 fields id, name, slug, logo.image_id, country, start_date;
                 where name ~ *"${q}"*;
                 limit ${limit};
-            `);
+            `), 3500, []);
         }
 
-        cacheSet(cacheKey, data, 90 * 1000);
+        cacheSet(cacheKey, data, 2 * 60 * 1000);
         res.json(data);
     } catch (error) {
         console.error('Search companies failed', error?.response?.data || error.message || error);
@@ -455,20 +547,17 @@ app.get('/api/search/platforms', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
-        const cacheKey = `search:platforms:${q}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
+        const cacheKey = `search:platforms:${q.toLowerCase()}:${limit}`;
+        const cached = cacheGetWithStale(cacheKey, 5 * 60 * 1000);
+        if (cached) return res.json(cached);
 
-        const data = await igdbQuery('platforms', `
+        const data = await withTimeout(igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
             search "${q}";
             where platform_logo != null;
             limit ${limit};
-        `);
-
-        cacheSet(cacheKey, data, 90 * 1000);
+        `), 3500, []);
+        cacheSet(cacheKey, data, 2 * 60 * 1000);
         res.json(data);
     } catch (error) {
         console.error('Search platforms failed', error?.response?.data || error.message || error);
@@ -482,42 +571,41 @@ app.get('/api/search/all', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 30);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
-        const cacheKey = `search:all:${q}:${limit}`;
-        const cached = cacheGet(cacheKey);
-        if(cached){
-            return res.json(cached);
-        }
+        const cacheKey = `search:all:${q.toLowerCase()}:${limit}`;
+        const cached = cacheGetWithStale(cacheKey, 5 * 60 * 1000);
+        if (cached) return res.json(cached);
 
         const [games, companies, platforms] = await Promise.all([
-            igdbQuery('games', `
+            withTimeout(igdbQuery('games', `
                 fields id, name, slug, cover.image_id, rating, first_release_date;
                 search "${q}";
                 limit ${limit};
-            `),
-            igdbQuery('companies', `
+            `), 3500, []),
+            withTimeout(igdbQuery('companies', `
                 fields id, name, slug, logo.image_id, country, start_date;
                 search "${q}";
                 limit ${limit};
-            `),
-            igdbQuery('platforms', `
+            `), 3500, []),
+            withTimeout(igdbQuery('platforms', `
                 fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
                 search "${q}";
                 where platform_logo != null;
                 limit ${limit};
-            `)
+            `), 3500, [])
         ]);
 
         let companiesFinal = companies;
         if((!companies || companies.length === 0) && q){
-            companiesFinal = await igdbQuery('companies', `
+            companiesFinal = await withTimeout(igdbQuery('companies', `
                 fields id, name, slug, logo.image_id, country, start_date;
                 where name ~ *"${q}"*;
                 limit ${limit};
-            `);
+            `), 3500, []);
         }
 
         const payload = { games, companies: companiesFinal, platforms };
-        cacheSet(cacheKey, payload, 90 * 1000);
+
+        cacheSet(cacheKey, payload, 2 * 60 * 1000);
         res.json(payload);
     } catch (error) {
         console.error('Search all failed', error?.response?.data || error.message || error);
@@ -576,8 +664,12 @@ app.get('/api/games/by-platform', async (req, res) => {
 });
 
 app.get('/api/events', async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
+    const cacheKey = `events:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
     try {
-        const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
         const withGames = String(req.query.withGames || '').toLowerCase() === 'true' || req.query.withGames === '1';
 
         const events = await igdbQuery('events', `
@@ -595,9 +687,11 @@ app.get('/api/events', async (req, res) => {
             normalized = await attachGameMatch(normalized);
         }
 
+        cacheSet(cacheKey, normalized, 15 * 60 * 1000);
         res.json(normalized);
     } catch (error) {
-        console.error(error);
+        console.error('Events failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
         res.status(500).json({ error: 'Failed to fetch events' });
     }
 });
@@ -645,6 +739,7 @@ app.get('/api/game-events', async (req, res) => {
     } catch (error) {
         console.error('Game events failed', error?.response?.data || error.message || error);
         res.status(500).json([]);
+    }
     }
 });
 
