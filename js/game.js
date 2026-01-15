@@ -103,16 +103,185 @@ document.addEventListener('DOMContentLoaded', async () => {
   const labelLoading = tr('common.loading', 'Cargando...');
   const labelVisit = tr('common.visitLink', 'Visitar enlace');
   const labelViewGame = tr('game.viewGame', 'Ver juego');
+  const classificationUnknown = tr('game.classificationUnknown', 'NR');
+
+  const ageRatingBadge = (ratings = []) => {
+    if (!Array.isArray(ratings) || ratings.length === 0) {
+      return classificationUnknown;
+    }
+
+    const findRating = (category) => ratings.find(r => r && r.category === category && r.rating);
+
+    const esrb = findRating(1);
+    if (esrb) {
+      const map = {
+        6: 'RP',
+        7: 'EC',
+        8: 'E',
+        9: 'E10+',
+        10: 'T',
+        11: 'M',
+        12: 'AO'
+      };
+      return map[esrb.rating] || 'NR';
+    }
+
+    const pegi = findRating(2);
+    if (pegi) {
+      const map = {
+        1: '3',
+        2: '7',
+        3: '12',
+        4: '16',
+        5: '18'
+      };
+      return map[pegi.rating] || 'NR';
+    }
+
+    const cero = findRating(3);
+    if (cero) {
+      const map = {
+        1: 'CERO A',
+        2: 'CERO B',
+        3: 'CERO C',
+        4: 'CERO D',
+        5: 'CERO Z'
+      };
+      return map[cero.rating] || 'CERO';
+    }
+
+    const usk = findRating(4);
+    if (usk) {
+      const map = {
+        1: 'USK 0',
+        2: 'USK 6',
+        3: 'USK 12',
+        4: 'USK 16',
+        5: 'USK 18'
+      };
+      return map[usk.rating] || 'USK';
+    }
+
+    const grac = findRating(5);
+    if (grac) {
+      const map = {
+        1: 'GRAC All',
+        2: 'GRAC 12',
+        3: 'GRAC 15',
+        4: 'GRAC 18',
+        5: 'GRAC Test'
+      };
+      return map[grac.rating] || 'GRAC';
+    }
+
+    const classInd = findRating(6);
+    if (classInd) {
+      const map = {
+        1: 'L',
+        2: '10',
+        3: '12',
+        4: '14',
+        5: '16',
+        6: '18'
+      };
+      return map[classInd.rating] || 'CLASS';
+    }
+
+    const acb = findRating(7);
+    if (acb) {
+      const map = {
+        1: 'G',
+        2: 'PG',
+        3: 'M',
+        4: 'MA15+',
+        5: 'R18+',
+        6: 'RC'
+      };
+      return map[acb.rating] || 'ACB';
+    }
+
+    const withSynopsis = ratings.find(r => r && typeof r.synopsis === 'string' && r.synopsis.trim());
+    if (withSynopsis) {
+      const match = withSynopsis.synopsis.match(/\b(3|7|12|16|18)\b/);
+      if (match) return match[1];
+      const nums = withSynopsis.synopsis.match(/\d{1,2}/g);
+      if (nums && nums.length) {
+        const max = Math.max(...nums.map(n => Number(n)).filter(n => Number.isFinite(n)));
+        if (Number.isFinite(max) && max > 0) return String(max);
+      }
+    }
+
+    const rating = ratings.find(r => r && r.rating);
+    return rating?.rating ? String(rating.rating) : classificationUnknown;
+  };
+
+  const normalizeClassificationDisplay = (value) => {
+    if (!value) return classificationUnknown;
+    const text = String(value).trim();
+    if (/\d+$/.test(text) && !text.endsWith('+')) return `${text}+`;
+    return text;
+  };
+
+  const classificationColor = (value) => {
+    if (!value) return '#6b7280';
+    const raw = String(value).toUpperCase();
+    const num = Number.parseInt(raw, 10);
+    if (Number.isFinite(num)) {
+      if (num >= 18) return '#ef4444';
+      if (num >= 16) return '#f97316';
+      if (num >= 12) return '#eab308';
+      if (num >= 7) return '#3b82f6';
+      return '#22c55e';
+    }
+
+    if (raw.includes('AO') || raw.includes('RC') || raw === 'M') return '#ef4444';
+    if (raw.includes('MA') || raw.includes('R18')) return '#f97316';
+    if (raw === 'T' || raw === 'PG' || raw.includes('16')) return '#eab308';
+    if (raw.includes('E10') || raw === 'ACB' || raw === 'USK') return '#3b82f6';
+    if (raw === 'E' || raw === 'EC' || raw === 'G' || raw.startsWith('L')) return '#22c55e';
+    if (raw === 'RP') return '#6b7280';
+    return '#6b7280';
+  };
+
+  const inferClassificationFromContent = ({ text, genres = [], themes = [], keywords = [], rating }) => {
+    const blob = String(text || '').toLowerCase();
+    const tokens = new Set([
+      ...genres,
+      ...themes,
+      ...keywords
+    ].map(v => String(v || '').toLowerCase()));
+
+    const matches = (words) => words.some(w => blob.includes(w) || tokens.has(w));
+
+    if (matches(['gore', 'blood', 'violence', 'horror', 'zombie', 'murder', 'slaughter', 'nudity', 'sexual', 'gambling', 'casino', 'drug'])) {
+      return '18';
+    }
+
+    if (matches(['shooter', 'war', 'battle', 'combat', 'assassin', 'kill', 'weapon', 'gun', 'army', 'survival', 'dystopia'])) {
+      return '16';
+    }
+
+    if (matches(['platform', 'adventure', 'puzzle', 'party', 'family', 'sports', 'racing', 'arcade', 'casual', 'farm', 'builder', 'simulator', 'strategy'])) {
+      return '10';
+    }
+
+    if (typeof rating === 'number' && rating >= 80) return '16';
+    if (typeof rating === 'number' && rating >= 60) return '14';
+    return '10';
+  };
 
   const name = game.name || 'Juego';
   const poster = imgUrl('t_cover_big', game.cover?.image_id);
   const heroId = (game.artworks?.[0]?.image_id) || (game.screenshots?.[0]?.image_id) || game.cover?.image_id;
   const hero = imgUrl('t_screenshot_big', heroId);
   const rating100 = Number(game.rating || 0);
-  const rating10 = rating100 ? (rating100/10).toFixed(1) : na;
+  const ratingDisplay = rating100 ? rating100.toFixed(1) : na;
+  const ratingColor = rating100 >= 75 ? '#00b374' : rating100 >= 50 ? '#e2b500' : '#e63b3b';
   const companies = (game.involved_companies||[]).map(ic=>ic.company?.name).filter(Boolean);
   const genres = (game.genres||[]).map(g=>({ id:g.id, name:g.name })).filter(g=>g.name);
   const platforms = (game.platforms||[]).map(p=>({ id:p.id, name:p.name })).filter(p=>p.name);
+  const themes = (game.themes||[]).map(t=>t.name).filter(Boolean);
+  const keywords = (game.keywords||[]).map(k=>k.name).filter(Boolean);
   const languageSupports = Array.from(new Set((game.language_supports||[]).map(ls=>ls.language?.name).filter(Boolean)));
   const releaseHuman = (game.release_dates?.[0]?.human) || (game.first_release_date ? new Date(game.first_release_date*1000).toLocaleDateString(locale) : noDate);
   const releaseTsMs = game.first_release_date ? game.first_release_date * 1000 : null;
@@ -122,6 +291,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const videoId = (game.videos||[])[0]?.video_id || '';
   const short = game.summary || '';
   const long = game.storyline || game.summary || '';
+  const classificationFromRatings = ageRatingBadge(game.age_ratings);
+  let classification = classificationFromRatings === classificationUnknown
+    ? inferClassificationFromContent({
+        text: `${short} ${long}`,
+        genres: genres.map(g => g.name),
+        themes,
+        keywords,
+        rating: rating100
+      }) || classificationFromRatings
+    : classificationFromRatings;
+  let classificationDisplay = normalizeClassificationDisplay(classification);
+  let classificationBg = classificationColor(classification);
 
   const media = [];
   if(videoId){
@@ -179,11 +360,15 @@ document.addEventListener('DOMContentLoaded', async () => {
               </div>
               <div class="stat-box bg-panel border border-border rounded-lg p-4 flex flex-col gap-2 items-start">
                 <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelRating}</div>
-                <div class="stat-value text-2xl font-bold">${rating10}</div>
+                <div class="stat-value text-2xl font-bold">
+                  <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-gray-900" style="background:${ratingDisplay === na ? '#444' : ratingColor}">
+                    ${ratingDisplay}
+                  </span>
+                </div>
               </div>
               <div class="stat-box bg-panel border border-border rounded-lg p-4 flex flex-col gap-2 items-start">
                 <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelClassification}</div>
-                <div class="badge-class inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-white font-bold">${rating100 >= 180 ? '18' : '18'}</div>
+                <div class="badge-class inline-flex items-center justify-center w-12 h-12 rounded-full text-white font-bold" style="background:${classificationBg}">${classificationDisplay}</div>
               </div>
             </div>
             <div class="info-block bg-panel border border-border rounded-lg p-4 space-y-2">
@@ -211,6 +396,40 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
     </div>
   `;
+
+  const badgeEl = root.querySelector('.badge-class');
+  const needsAgeRatings = (ratings) => Array.isArray(ratings) && ratings.length > 0 && ratings.every(r => r && r.id && (!r.category || !r.rating));
+
+  const updateBadge = (value) => {
+    if (!badgeEl) return;
+    classification = value;
+    classificationDisplay = normalizeClassificationDisplay(classification);
+    classificationBg = classificationColor(classification);
+    badgeEl.textContent = classificationDisplay;
+    badgeEl.style.background = classificationBg;
+  };
+
+  if (badgeEl && (classification === classificationUnknown || needsAgeRatings(game.age_ratings))) {
+    const ids = needsAgeRatings(game.age_ratings)
+      ? game.age_ratings.map(r => r.id).filter(Boolean)
+      : [];
+
+    if (ids.length) {
+      try {
+        const res = await fetch(`${apiBase()}/api/age-ratings?ids=${ids.join(',')}`);
+        if (res.ok) {
+          const resolved = await res.json();
+          const updated = ageRatingBadge(resolved);
+          if (updated && updated !== classification) updateBadge(updated);
+        }
+      } catch (e) {
+        console.warn('Age rating resolve failed', e);
+      }
+    }
+  }
+
+  // Ensure initial badge styling is consistent when no fetch occurs
+  updateBadge(classification);
 
   if(isFutureRelease){
     const cdEl = document.getElementById('releaseCountdown');

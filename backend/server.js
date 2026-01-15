@@ -741,7 +741,7 @@ app.get('/api/game-events', async (req, res) => {
         res.status(500).json([]);
     }
     }
-});
+);
 
 app.get('/api/news', async (req, res) => {
     try {
@@ -816,6 +816,9 @@ app.get('/api/game', async (req, res) => {
                 videos.video_id,
                 genres.id, genres.name,
                 platforms.id, platforms.name,
+                themes.id, themes.name,
+                keywords.id, keywords.name,
+                age_ratings.category, age_ratings.rating, age_ratings.synopsis, age_ratings.rating_cover_url,
                 involved_companies.company.name,
                 language_supports.language.name,
                 first_release_date,
