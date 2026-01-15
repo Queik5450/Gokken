@@ -50,7 +50,8 @@ const FALLBACK_COMPANY = {
 };
 
 async function fetchCompany(id){
-    const url = `${apiBase()}/api/company?id=${encodeURIComponent(id)}`;
+    const lang = encodeURIComponent(window.__GOKKEN_LOCALE__ || 'es-ES');
+    const url = `${apiBase()}/api/company?id=${encodeURIComponent(id)}&lang=${lang}`;
     try{
         const res = await fetch(url);
         if(!res.ok) throw new Error(res.statusText);

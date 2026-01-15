@@ -49,7 +49,8 @@ const FALLBACK_PLATFORM = {
 
 async function fetchPlatform(id, slug){
     const param = id ? `id=${encodeURIComponent(id)}` : `slug=${encodeURIComponent(slug)}`;
-    const url = `${apiBase()}/api/platform?${param}`;
+    const lang = encodeURIComponent(window.__GOKKEN_LOCALE__ || 'es-ES');
+    const url = `${apiBase()}/api/platform?${param}&lang=${lang}`;
     try{
         const res = await fetch(url);
         if(!res.ok) throw new Error(res.statusText);

@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let game;
   try{
-    const res = await fetch(`${apiBase()}/api/game?${qs}`);
+    const lang = encodeURIComponent(window.__GOKKEN_LOCALE__ || 'es-ES');
+    const res = await fetch(`${apiBase()}/api/game?${qs}&lang=${lang}`);
     if(!res.ok) throw new Error(res.statusText);
     game = await res.json();
   }catch(e){
@@ -505,7 +506,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(!eventsContainer) return;
     eventsContainer.innerHTML = `<p class="text-gray-400 text-sm">${labelLoading}</p>`;
     try{
-      const res = await fetch(`${apiBase()}/api/game-events?name=${encodeURIComponent(gameName)}&limit=9&withGames=1`);
+      const lang = encodeURIComponent(window.__GOKKEN_LOCALE__ || 'es-ES');
+      const res = await fetch(`${apiBase()}/api/game-events?name=${encodeURIComponent(gameName)}&limit=9&withGames=1&lang=${lang}`);
       if(!res.ok) throw new Error(res.statusText);
       const events = await res.json();
       renderEventsGrid(events || []);

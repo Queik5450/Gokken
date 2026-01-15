@@ -26,6 +26,49 @@ function cacheSet(key, value, ttlMs) {
     memoryCache.set(key, { value, expiresAt: Date.now() + ttlMs });
 }
 
+function deeplEndpoint() {
+    if (process.env.DEEPL_ENDPOINT) return process.env.DEEPL_ENDPOINT;
+    const key = process.env.DEEPL_API_KEY || '';
+    return key.endsWith(':fx') ? 'https://api-free.deepl.com/v2/translate' : 'https://api.deepl.com/v2/translate';
+}
+
+function deeplTarget(lang) {
+    const normalized = normalizeIgdbLang(lang);
+    if (normalized.toLowerCase().startsWith('es')) return 'ES';
+    if (normalized.toLowerCase().startsWith('en')) return 'EN';
+    return null;
+}
+
+async function translateText(text, lang) {
+    const value = typeof text === 'string' ? text.trim() : '';
+    if (!value) return text;
+    if (!process.env.DEEPL_API_KEY) return text;
+    const target = deeplTarget(lang);
+    if (!target) return text;
+
+    const cacheKey = `deepl:${target}:${value}`;
+    const cached = cacheGetWithStale(cacheKey, 7 * 24 * 60 * 60 * 1000);
+    if (cached) return cached;
+
+    try {
+        const params = new URLSearchParams();
+        params.append('text', value);
+        params.append('target_lang', target);
+        const response = await axios.post(deeplEndpoint(), params.toString(), {
+            timeout: 8000,
+            headers: {
+                'Authorization': `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        const translated = response?.data?.translations?.[0]?.text || value;
+        cacheSet(cacheKey, translated, 7 * 24 * 60 * 60 * 1000);
+        return translated;
+    } catch {
+        return text;
+    }
+}
+
 function withTimeout(promise, ms, fallback) {
     let timer;
     const timeout = new Promise((resolve) => {
@@ -106,6 +149,24 @@ function normalizeNewsLang(value) {
     const lang = String(value || '').toLowerCase().trim();
     if (lang === 'en') return 'en';
     return 'es';
+}
+
+function normalizeIgdbLang(value) {
+    if (!value) return 'es-ES';
+    const raw = String(value).trim();
+    const lower = raw.toLowerCase();
+    const first = lower.split(',')[0].trim();
+    if (first.startsWith('en')) return 'en-US';
+    if (first.startsWith('es')) return 'es-ES';
+    if (lower.includes('en')) return 'en-US';
+    if (lower.includes('es')) return 'es-ES';
+    return 'es-ES';
+}
+
+function resolveLang(req) {
+    if (req?.query?.lang) return normalizeIgdbLang(req.query.lang);
+    const header = req?.headers ? req.headers['accept-language'] : null;
+    return normalizeIgdbLang(header);
 }
 
 function getRssFeeds(lang) {
@@ -211,7 +272,7 @@ async function getAccessToken() {
     return accessToken;
 }
 
-async function igdbQuery(resource, query) {
+async function igdbQuery(resource, query, lang) {
     const token = await getAccessToken();
     const request = () => axios({
         url: `https://api.igdb.com/v4/${resource}`,
@@ -220,7 +281,8 @@ async function igdbQuery(resource, query) {
         headers: {
             'Client-ID': process.env.IGDB_CLIENT_ID,
             'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Accept-Language': normalizeIgdbLang(lang)
         },
         data: query
     });
@@ -477,15 +539,18 @@ app.get('/api/company', async (req, res) => {
         const slug = req.query.slug || null;
         if (!id && !slug) return res.status(400).json({ error: 'Missing id or slug' });
 
+        const lang = resolveLang(req);
+
         const where = id ? `where id = ${id};` : `where slug = "${slug}";`;
         const companies = await igdbQuery('companies', `
             fields id, name, slug, description, logo.image_id, country, start_date, websites.url, websites.category;
             ${where}
             limit 1;
-        `);
+        `, lang);
 
         if (!companies || !companies.length) return res.status(404).json({ error: 'Company not found' });
         const company = companies[0];
+        const translatedDescription = await translateText(company.description || '', lang);
 
         const games = await igdbQuery('games', `
             fields id, name, slug, cover.image_id, rating, rating_count, first_release_date, involved_companies.company, platforms.id, platforms.name, genres.id, genres.name, dlcs;
@@ -499,6 +564,7 @@ app.get('/api/company', async (req, res) => {
 
         res.json({
             ...company,
+            description: translatedDescription,
             avg_rating: avg,
             rating_count: rated.length,
             games
@@ -688,7 +754,8 @@ app.get('/api/games/by-platform', async (req, res) => {
 
 app.get('/api/events', async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
-    const cacheKey = `events:${limit}`;
+    const lang = resolveLang(req);
+    const cacheKey = `events:${limit}:${lang}`;
     const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
     if (cached) return res.json(cached);
 
@@ -701,10 +768,11 @@ app.get('/api/events', async (req, res) => {
             limit ${limit};
         `);
 
-        let normalized = (events || []).map(e => ({
+        let normalized = await Promise.all((events || []).map(async (e) => ({
             ...e,
+            description: await translateText(e?.description || '', lang),
             url: e?.live_stream_url || (Array.isArray(e?.event_networks) && e.event_networks[0]?.url ? e.event_networks[0].url : '')
-        }));
+        })));
 
         if (withGames) {
             normalized = await attachGameMatch(normalized);
@@ -724,6 +792,7 @@ app.get('/api/game-events', async (req, res) => {
         const gameName = String(req.query.name || '').trim();
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 30);
         if (!gameName) return res.status(400).json({ error: 'Missing game name' });
+        const lang = resolveLang(req);
 
         // Resolve the target game once to use its id/name for filtering.
         const targetGames = await igdbQuery('games', `
@@ -739,10 +808,11 @@ app.get('/api/game-events', async (req, res) => {
             limit ${poolSize};
         `);
 
-        const normalized = (events || []).map(e => ({
+        const normalized = await Promise.all((events || []).map(async (e) => ({
             ...e,
+            description: await translateText(e?.description || '', lang),
             url: e?.live_stream_url || (Array.isArray(e?.event_networks) && e.event_networks[0]?.url ? e.event_networks[0].url : '')
-        }));
+        })));
 
         const enriched = await attachGameMatch(normalized);
 
@@ -769,20 +839,27 @@ app.get('/api/game-events', async (req, res) => {
 app.get('/api/news', async (req, res) => {
     try {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
-
         const lang = normalizeNewsLang(req.query.lang);
 
         // Prefer real news via RSS.
         const rssItems = await fetchRssNews(limit, lang);
         if (rssItems && rssItems.length) {
-            return res.json(rssItems);
+            const translated = await Promise.all(rssItems.map(async (item) => ({
+                ...item,
+                summary: await translateText(item.summary || '', lang)
+            })));
+            return res.json(translated);
         }
 
         // Fallback to English RSS if Spanish feeds fail/are rate-limited.
         if (lang !== 'en') {
             const enItems = await fetchRssNews(limit, 'en');
             if (enItems && enItems.length) {
-                return res.json(enItems);
+                const translated = await Promise.all(enItems.map(async (item) => ({
+                    ...item,
+                    summary: await translateText(item.summary || '', lang)
+                })));
+                return res.json(translated);
             }
         }
 
@@ -793,18 +870,18 @@ app.get('/api/news', async (req, res) => {
             where summary != null & cover != null;
             sort updated_at desc;
             limit ${limit};
-        `);
+        `, lang);
 
-        const news = (games || []).map(g => ({
+        const news = await Promise.all((games || []).map(async (g) => ({
             id: g.id,
             title: g.name,
-            summary: g.summary,
+            summary: await translateText(g.summary || '', lang),
             published_at: toUnixSeconds(g.updated_at),
             updated_at: toUnixSeconds(g.updated_at),
             pulse_image: g.cover ? { image_id: g.cover.image_id } : null,
             url: g.url || '',
             image_url: ''
-        }));
+        })));
 
         res.json(news);
     } catch (error) {
@@ -818,6 +895,7 @@ app.get('/api/game', async (req, res) => {
         const id = req.query.id ? Number(req.query.id) : null;
         const slug = req.query.slug || null;
         const name = req.query.name || null;
+        const lang = resolveLang(req);
 
         let whereOrSearch = '';
         if (id) {
@@ -850,11 +928,20 @@ app.get('/api/game', async (req, res) => {
             limit 1;
         `;
 
-        const data = await igdbQuery('games', query);
+        const data = await igdbQuery('games', query, lang);
         if (!data || data.length === 0) {
             return res.status(404).json({ error: 'Game not found' });
         }
-        res.json(data[0]);
+        const game = data[0];
+        const [summary, storyline] = await Promise.all([
+            translateText(game.summary || '', lang),
+            translateText(game.storyline || '', lang)
+        ]);
+        res.json({
+            ...game,
+            summary,
+            storyline
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch game detail' });
@@ -867,15 +954,22 @@ app.get('/api/platform', async (req, res) => {
         const slug = req.query.slug || null;
         if (!id && !slug) return res.status(400).json({ error: 'Missing id or slug' });
 
+        const lang = resolveLang(req);
+
         const where = id ? `where id = ${id};` : `where slug = "${slug}";`;
         const platforms = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, summary, generation, platform_logo.image_id, platform_family.name, category, websites.url, websites.category;
             ${where}
             limit 1;
-        `);
+        `, lang);
 
         if (!platforms || !platforms.length) return res.status(404).json({ error: 'Platform not found' });
-        res.json(platforms[0]);
+        const platform = platforms[0];
+        const summary = await translateText(platform.summary || '', lang);
+        res.json({
+            ...platform,
+            summary
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch platform' });

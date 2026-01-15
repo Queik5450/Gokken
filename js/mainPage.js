@@ -281,7 +281,7 @@ function formatDateTime(ts){
 }
 
 async function fetchEvents(){
-    const url = `${apiBase()}/api/events?limit=15`;
+    const url = `${apiBase()}/api/events?limit=15&lang=${encodeURIComponent(getLang())}`;
     try{
         const res = await fetch(url);
         if(!res.ok) throw new Error(res.statusText);
