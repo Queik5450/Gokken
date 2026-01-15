@@ -465,7 +465,7 @@ app.get('/api/company', async (req, res) => {
         const company = companies[0];
 
         const games = await igdbQuery('games', `
-            fields id, name, slug, cover.image_id, rating, rating_count, first_release_date, involved_companies.company;
+            fields id, name, slug, cover.image_id, rating, rating_count, first_release_date, involved_companies.company, platforms.id, platforms.name, genres.id, genres.name, dlcs;
             where involved_companies.company = ${company.id} & cover != null;
             sort rating desc;
             limit 30;

@@ -69,9 +69,11 @@ async function fetchCompany(id){
 function renderCompany(root, data){
     if(!root) return;
     const games = data.games || [];
-    const featured = games.slice(0,5);
+    const ratedGames = games.filter(g=>typeof g.rating === 'number').sort((a,b)=> (b.rating||0) - (a.rating||0));
+    const featured = ratedGames.slice(0,10);
     const countryTxt = data.country ? `${tr('search.countryCodeLabel', 'País código')}: ${data.country}` : tr('company.countryUnknown', 'País: Desconocido');
     const ratingTxt = data.avg_rating ? `${data.avg_rating.toFixed(1)} / 100` : tr('common.noRating', 'Sin rating');
+    const totalDlcs = games.reduce((sum, g)=> sum + (Array.isArray(g.dlcs) ? g.dlcs.length : 0), 0);
     const toHost = (url = '') => {
         try { return new URL(url).hostname; } catch { return url.replace(/^https?:\/\//,''); }
     };
@@ -98,6 +100,7 @@ function renderCompany(root, data){
                             <div class="flex flex-wrap gap-3 text-sm text-gray-200">
                                 <span class="px-3 py-1 rounded-full bg-surface border border-border">${countryTxt}</span>
                                 <span class="px-3 py-1 rounded-full bg-surface border border-border">${tr('results.games', 'Juegos')}: ${games.length}</span>
+                                <span class="px-3 py-1 rounded-full bg-surface border border-border">${tr('company.dlcs', 'DLCs desarrollados')}: ${totalDlcs}</span>
                                 <div class="flex items-center gap-2">
                                     <span class="font-semibold text-gray-100">${tr('company.linksLabel', 'Enlaces:')}</span>
                                     <div class="flex items-center gap-2">
@@ -146,7 +149,7 @@ function renderCompany(root, data){
                 </div>
                 <div class="overflow-hidden -mx-1">
                     <div class="featured-cards flex gap-4 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
-                        ${featured.map(f => `<div class="fcard w-40 shrink-0 snap-start bg-surface border border-border rounded-xl overflow-hidden shadow-md hover:border-primary transition cursor-pointer" data-game-id="${f.id || f.slug || ''}"><div class="aspect-[3/4] bg-neutral-900"><img src="${coverUrl(f)}" class="w-full h-full object-cover" alt="${f.name || tr('search.tagGame', 'Juego')}"></div><div class="ftitle px-3 py-2 text-sm font-semibold text-gray-100 leading-tight">${f.name || tr('search.tagGame', 'Juego')}</div></div>`).join('') || `<div class="list-placeholder text-gray-400">${tr('results.emptyGames', 'Sin juegos')}</div>`}
+                        ${featured.map(f => `<div class="fcard w-40 shrink-0 snap-start bg-surface border border-border rounded-xl overflow-hidden shadow-md hover:border-primary transition cursor-pointer" data-game-id="${f.id || f.slug || ''}"><div class="aspect-[3/4] bg-neutral-900"><img src="${coverUrl(f)}" class="w-full h-full object-cover" alt="${f.name || tr('search.tagGame', 'Juego')}"></div><div class="ftitle px-3 py-2 text-sm font-semibold text-gray-100 leading-tight">${f.name || tr('search.tagGame', 'Juego')}</div><div class="px-3 pb-2 text-xs text-gray-300">${typeof f.rating==='number'?f.rating.toFixed(1):tr('common.noRating','Sin rating')}</div></div>`).join('') || `<div class="list-placeholder text-gray-400">${tr('results.emptyGames', 'Sin juegos')}</div>`}
                     </div>
                 </div>
             </section>
