@@ -26,13 +26,11 @@ function cacheSet(key, value, ttlMs) {
     memoryCache.set(key, { value, expiresAt: Date.now() + ttlMs });
 }
 
-function deeplEndpoint() {
-    if (process.env.DEEPL_ENDPOINT) return process.env.DEEPL_ENDPOINT;
-    const key = process.env.DEEPL_API_KEY || '';
-    return key.endsWith(':fx') ? 'https://api-free.deepl.com/v2/translate' : 'https://api.deepl.com/v2/translate';
+function libreTranslateEndpoint() {
+    return process.env.LIBRETRANSLATE_ENDPOINT || 'https://libretranslate.de/translate';
 }
 
-function deeplTarget(lang) {
+function translateTarget(lang) {
     const normalized = normalizeIgdbLang(lang);
     if (normalized.toLowerCase().startsWith('es')) return 'ES';
     if (normalized.toLowerCase().startsWith('en')) return 'EN';
@@ -42,26 +40,26 @@ function deeplTarget(lang) {
 async function translateText(text, lang) {
     const value = typeof text === 'string' ? text.trim() : '';
     if (!value) return text;
-    if (!process.env.DEEPL_API_KEY) return text;
-    const target = deeplTarget(lang);
+    const target = translateTarget(lang);
     if (!target) return text;
 
-    const cacheKey = `deepl:${target}:${value}`;
+    const cacheKey = `translate:${target}:${value}`;
     const cached = cacheGetWithStale(cacheKey, 7 * 24 * 60 * 60 * 1000);
     if (cached) return cached;
 
     try {
-        const params = new URLSearchParams();
-        params.append('text', value);
-        params.append('target_lang', target);
-        const response = await axios.post(deeplEndpoint(), params.toString(), {
+        const payload = {
+            q: value,
+            source: 'auto',
+            target: target === 'ES' ? 'es' : 'en',
+            format: 'text'
+        };
+        if (process.env.LIBRETRANSLATE_API_KEY) payload.api_key = process.env.LIBRETRANSLATE_API_KEY;
+        const response = await axios.post(libreTranslateEndpoint(), payload, {
             timeout: 8000,
-            headers: {
-                'Authorization': `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-        const translated = response?.data?.translations?.[0]?.text || value;
+        const translated = response?.data?.translatedText || value;
         cacheSet(cacheKey, translated, 7 * 24 * 60 * 60 * 1000);
         return translated;
     } catch {
