@@ -5,7 +5,7 @@
 }
 
 .about-hero-bg {
-    background-image: url('https://placehold.co/1600x520/111/fff?text=Gokken+About');
+    background-image: url('../media/about_banner.png');
     background-size: cover;
     background-position: center;
     opacity: 0.15;
