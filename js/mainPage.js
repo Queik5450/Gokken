@@ -536,12 +536,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function withTimeout(promise, ms, fallbackValue){
+        let timer;
+        const timeout = new Promise(resolve => {
+            timer = setTimeout(() => resolve(fallbackValue), ms);
+        });
+        return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+    }
+
     async function loadEventsIntoPage(){
         const grid = document.querySelector('[data-events-grid]');
         const eventsSection = document.querySelector('.events');
         if(!grid) return;
-        const [events, news] = await Promise.all([fetchEvents(), fetchNews()]);
-        postsCache = [...events.map(mapPost), ...news.map(mapPost)]
+
+        // Load progressively: render events ASAP, then merge news when it arrives.
+        const eventsPromise = fetchEvents();
+        const newsPromise = withTimeout(fetchNews(), 4500, []);
+
+        const events = await eventsPromise;
+        postsCache = [...(events || []).map(mapPost)]
             .sort((a,b)=> (b.date||0) - (a.date||0))
             .slice(0,20);
         visibleCount = Math.min(visibleCount, postsCache.length || 0) || 3;
@@ -549,6 +562,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if(eventsSection){
             const hasContent = postsCache.length > 0;
             eventsSection.style.display = hasContent ? '' : 'none';
+        }
+
+        const news = await newsPromise;
+        if(news && news.length){
+            postsCache = [...postsCache, ...news.map(mapPost)]
+                .sort((a,b)=> (b.date||0) - (a.date||0))
+                .slice(0,20);
+            visibleCount = Math.min(visibleCount, postsCache.length || 0) || 3;
+            updateEventsGrid();
+            if(eventsSection){
+                const hasContent = postsCache.length > 0;
+                eventsSection.style.display = hasContent ? '' : 'none';
+            }
         }
     }
 
