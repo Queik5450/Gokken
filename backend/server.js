@@ -229,7 +229,7 @@ app.get('/api/top-games', async (req, res) => {
         }
 
         const data = await igdbQuery('games', `
-            fields id, name, cover.image_id, rating, rating_count, slug, first_release_date;
+            fields id, name, cover.image_id, rating, rating_count, slug, first_release_date, genres.name, platforms.name;
             sort ${order};
             where rating != null & cover != null & rating_count > 50;
             limit ${Math.min(Math.max(limit,1),100)};

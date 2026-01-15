@@ -48,7 +48,7 @@
   </header>
 
   <section class="relative w-full bg-gradient-to-b from-surface via-surface/90 to-neutral-950">
-    <div class="absolute inset-0" style="background-image:url('https://placehold.co/1600x420/222/fff?text=Top+100+Hero'); background-size:cover; background-position:center; opacity:0.25;"></div>
+    <div class="absolute inset-0" style="background-image:url('../media/top100_banner.webp'); background-size:cover; background-position:center; opacity:0.25;"></div>
     <div class="relative max-w-6xl mx-auto px-4 py-14 flex flex-col gap-4">
       <span class="inline-flex w-max px-3 py-1 rounded-full border border-primary text-primary text-xs font-semibold uppercase tracking-wide bg-black/30" data-i18n="top100.badge">Ranking</span>
       <h1 class="text-3xl md:text-4xl font-bold leading-tight" data-i18n="top100.title">Top 100 videojuegos</h1>
@@ -75,9 +75,9 @@
           <label class="text-sm text-gray-300" data-i18n="top100.avgRating">Nota media</label>
           <select id="fRating" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-gray-200">
             <option value="all" data-i18n="top100.allF">Todas</option>
-            <option value="90">≥ 9.0</option>
-            <option value="80">≥ 8.0</option>
-            <option value="70">≥ 7.0</option>
+            <option value="0-80">≤ 80</option>
+            <option value="80-90">80 - 90</option>
+            <option value="90-100">90 - 100</option>
           </select>
         </div>
         <div class="filter-group flex flex-col gap-2">

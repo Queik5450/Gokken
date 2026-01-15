@@ -9,9 +9,9 @@ function apiBase(){
 
 function sampleTop(){
   return [
-    { id: 1942, name: 'The Witcher 3: Wild Hunt', rating: 94.5, cover: { image_id: 'co1r16' }, summary: 'A dark fantasy RPG.' },
-    { id: 1877, name: 'Red Dead Redemption 2', rating: 94.2, cover: { image_id: 'co1l7n' }, summary: 'Epic Western open world.' },
-    { id: 11133, name: 'God of War', rating: 92.0, cover: { image_id: 'co1tmu' }, summary: 'Father and son journey.' }
+    { id: 1942, name: 'The Witcher 3: Wild Hunt', rating: 94.5, cover: { image_id: 'co1r16' }, summary: 'A dark fantasy RPG.', genres:[{name:'RPG'}], platforms:[{name:'PC'},{name:'PS4'}], first_release_date: 1432147200 },
+    { id: 1877, name: 'Red Dead Redemption 2', rating: 94.2, cover: { image_id: 'co1l7n' }, summary: 'Epic Western open world.', genres:[{name:'Adventure'}], platforms:[{name:'PS4'},{name:'Xbox One'}], first_release_date: 1540339200 },
+    { id: 11133, name: 'God of War', rating: 92.0, cover: { image_id: 'co1tmu' }, summary: 'Father and son journey.', genres:[{name:'Action'}], platforms:[{name:'PS4'}], first_release_date: 1524096000 }
   ];
 }
 
@@ -66,12 +66,80 @@ function renderList(games){
 
 document.addEventListener('DOMContentLoaded', async ()=>{
   const games = await fetchTop(100);
+
+  const fPlatform = document.getElementById('fPlatform');
+  const fGenre = document.getElementById('fGenre');
+  const fRating = document.getElementById('fRating');
+  const fRelease = document.getElementById('fRelease');
+
+  function uniqueSorted(list){
+    return Array.from(new Set(list.filter(Boolean))).sort((a,b)=> a.localeCompare(b));
+  }
+
+  function yearBucket(ts){
+    if(!ts) return 'all';
+    const y = new Date(ts*1000).getFullYear();
+    const now = new Date().getFullYear();
+    if(y >= now-4) return 'last5';
+    if(y >= 2010) return '2010s';
+    if(y >= 2000) return '2000s';
+    return 'older';
+  }
+
+  function buildFilters(data){
+    const platforms = uniqueSorted(data.flatMap(g=> (g.platforms||[]).map(p=>p.name)));
+    const genres = uniqueSorted(data.flatMap(g=> (g.genres||[]).map(gm=>gm.name)));
+
+    if(fPlatform){
+      fPlatform.innerHTML = `<option value="all">Todas</option>` + platforms.map(p=>`<option value="${p}">${p}</option>`).join('');
+      fPlatform.disabled = false;
+    }
+    if(fGenre){
+      fGenre.innerHTML = `<option value="all">Todos</option>` + genres.map(g=>`<option value="${g}">${g}</option>`).join('');
+      fGenre.disabled = false;
+    }
+    if(fRelease){
+      fRelease.innerHTML = `
+        <option value="all">Todas</option>
+        <option value="last5">Últimos 5 años</option>
+        <option value="2010s">2010-2019</option>
+        <option value="2000s">2000-2009</option>
+        <option value="older">Antes de 2000</option>`;
+      fRelease.disabled = false;
+    }
+  }
+
+  function applyFilters(){
+    const rangeVal = fRating?.value || 'all';
+    let rMin = 0, rMax = 100;
+    if(rangeVal !== 'all'){
+      const parts = rangeVal.split('-');
+      if(parts.length === 2){
+        rMin = Number(parts[0]) || 0;
+        rMax = Number(parts[1]) || 100;
+      }
+    }
+    const pSel = fPlatform?.value || 'all';
+    const gSel = fGenre?.value || 'all';
+    const rSel = fRelease?.value || 'all';
+
+    const filtered = games.filter(g=>{
+      const rating = Number(g.rating || 0);
+      const ratingOk = rating >= rMin && rating <= rMax;
+      const plats = (g.platforms||[]).map(p=>p.name);
+      const genres = (g.genres||[]).map(x=>x.name);
+      const platformOk = pSel==='all' || plats.includes(pSel);
+      const genreOk = gSel==='all' || genres.includes(gSel);
+      const releaseOk = rSel==='all' || yearBucket(g.first_release_date) === rSel;
+      return ratingOk && platformOk && genreOk && releaseOk;
+    });
+    renderList(filtered);
+  }
+
+  buildFilters(games);
   renderList(games);
 
-  const fRating = document.getElementById('fRating');
-  fRating?.addEventListener('change', ()=>{
-    const min = fRating.value==='all'? 0 : Number(fRating.value);
-    const filtered = games.filter(g=> (g.rating||0) >= min);
-    renderList(filtered);
+  [fPlatform, fGenre, fRating, fRelease].forEach(sel=>{
+    sel?.addEventListener('change', applyFilters);
   });
 });
