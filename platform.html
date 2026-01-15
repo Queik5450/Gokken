@@ -38,12 +38,33 @@
                 </div>
             </div>
                 <div class="flex items-center gap-3">
-                <div class="lang-switch flex items-center gap-1">
-                    <button type="button" data-lang="es" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">ES</button>
-                    <button type="button" data-lang="en" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">EN</button>
+                    <nav class="site-nav hidden md:flex items-center gap-2" aria-label="Main">
+                        <a href="index.html" data-i18n="nav.home">Inicio</a>
+                        <a href="top100.html" data-i18n="nav.top100">Top 100</a>
+                        <a href="releases.html" data-i18n="nav.releases">Lanzamientos</a>
+                        <a href="companies.html" data-i18n="nav.companies">Compañías</a>
+                        <a href="platform.html" data-i18n="nav.platforms">Consolas</a>
+                        <a href="about.html" data-i18n="nav.about">Acerca de</a>
+                        <a href="learn.html" data-i18n="nav.learn">Aprender</a>
+                    </nav>
+                    <button type="button" class="nav-toggle md:hidden" data-nav-toggle aria-expanded="false" aria-controls="mobileNav" data-i18n-aria-label="header.menuTitle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="lang-switch flex items-center gap-1">
+                        <button type="button" data-lang="es" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">ES</button>
+                        <button type="button" data-lang="en" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">EN</button>
+                    </div>
                 </div>
-            </div>
         </div>
+            <div id="mobileNav" class="mobile-nav hidden md:hidden" data-nav-menu>
+                <a href="index.html" data-i18n="nav.home">Inicio</a>
+                <a href="top100.html" data-i18n="nav.top100">Top 100</a>
+                <a href="releases.html" data-i18n="nav.releases">Lanzamientos</a>
+                <a href="companies.html" data-i18n="nav.companies">Compañías</a>
+                <a href="platform.html" data-i18n="nav.platforms">Consolas</a>
+                <a href="about.html" data-i18n="nav.about">Acerca de</a>
+                <a href="learn.html" data-i18n="nav.learn">Aprender</a>
+            </div>
     </header>
 
     <main class="pt-6 pb-10">
@@ -60,6 +81,7 @@
         </div>
     </footer>
 
+    <script src="../js/nav.js"></script>
     <script src="../js/i18n.js"></script>
     <script src="../js/search.js"></script>
     <script src="../js/platform.js"></script>

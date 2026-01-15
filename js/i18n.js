@@ -35,6 +35,15 @@
         homeAria: 'Ir a la página principal',
         menuTitle: 'Menú'
       },
+      nav: {
+        home: 'Inicio',
+        top100: 'Top 100',
+        releases: 'Lanzamientos',
+        companies: 'Compañías',
+        platforms: 'Consolas',
+        about: 'Acerca de',
+        learn: 'Aprender'
+      },
       search: {
         placeholder: 'Buscar',
         tagGame: 'Juego',
@@ -228,6 +237,15 @@
       header: {
         homeAria: 'Go to home page',
         menuTitle: 'Menu'
+      },
+      nav: {
+        home: 'Home',
+        top100: 'Top 100',
+        releases: 'Releases',
+        companies: 'Companies',
+        platforms: 'Consoles',
+        about: 'About',
+        learn: 'Learn'
       },
       search: {
         placeholder: 'Search',

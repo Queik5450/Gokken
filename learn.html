@@ -4,12 +4,70 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GDQuest - Gokken</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#ff0000',
+            surface: '#0f0f0f',
+            panel: '#141414',
+            border: '#1f1f1f'
+          },
+          fontFamily: {
+            sans: ['Roboto', 'ui-sans-serif', 'system-ui']
+          }
+        }
+      }
+    }
+  </script>
   <meta http-equiv="refresh" content="0; url=https://www.gdquest.com">
   <link rel="stylesheet" href="../css/common.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="bg-neutral-950 text-gray-100 font-sans" style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
-  <main class="max-w-xl mx-auto px-4 text-center space-y-3">
+<body class="bg-neutral-950 text-gray-100 font-sans" style="min-height:100vh;">
+  <header class="bg-surface/80 backdrop-blur border-b border-border">
+    <div class="header-container max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 py-4">
+      <div class="logo text-xl font-bold"><a class="logo-btn inline-block px-3 py-2 rounded border border-primary text-primary" href="index.html" aria-label="Ir a la página principal" data-i18n-aria-label="header.homeAria">Gokken</a></div>
+      <div class="search-bar flex-1">
+        <div class="search-input-wrapper relative flex items-center gap-2 bg-panel border border-border rounded-lg px-3 py-2">
+          <input placeholder="Buscar" data-i18n-placeholder="search.placeholder" class="w-full bg-transparent outline-none text-gray-100 placeholder-gray-400">
+          <i class="fas fa-search text-primary"></i>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <nav class="site-nav hidden md:flex items-center gap-2" aria-label="Main">
+          <a href="index.html" data-i18n="nav.home">Inicio</a>
+          <a href="top100.html" data-i18n="nav.top100">Top 100</a>
+          <a href="releases.html" data-i18n="nav.releases">Lanzamientos</a>
+          <a href="companies.html" data-i18n="nav.companies">Compañías</a>
+          <a href="platform.html" data-i18n="nav.platforms">Consolas</a>
+          <a href="about.html" data-i18n="nav.about">Acerca de</a>
+          <a href="learn.html" data-i18n="nav.learn">Aprender</a>
+        </nav>
+        <button type="button" class="nav-toggle md:hidden" data-nav-toggle aria-expanded="false" aria-controls="mobileNav" data-i18n-aria-label="header.menuTitle">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="lang-switch flex items-center gap-1">
+          <button type="button" data-lang="es" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">ES</button>
+          <button type="button" data-lang="en" class="px-2 py-1 rounded-md border border-border bg-panel text-gray-100 text-xs font-semibold">EN</button>
+        </div>
+      </div>
+    </div>
+    <div id="mobileNav" class="mobile-nav hidden md:hidden" data-nav-menu>
+      <a href="index.html" data-i18n="nav.home">Inicio</a>
+      <a href="top100.html" data-i18n="nav.top100">Top 100</a>
+      <a href="releases.html" data-i18n="nav.releases">Lanzamientos</a>
+      <a href="companies.html" data-i18n="nav.companies">Compañías</a>
+      <a href="platform.html" data-i18n="nav.platforms">Consolas</a>
+      <a href="about.html" data-i18n="nav.about">Acerca de</a>
+      <a href="learn.html" data-i18n="nav.learn">Aprender</a>
+    </div>
+  </header>
+  <main class="max-w-xl mx-auto px-4 text-center space-y-3" style="min-height: calc(100vh - 120px); display:flex; flex-direction:column; align-items:center; justify-content:center;">
     <h1 class="text-2xl font-bold">Redirigiendo a GDQuest…</h1>
     <p class="text-gray-300">Redirecting to GDQuest…</p>
     <a class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-panel text-primary hover:border-primary transition" href="https://www.gdquest.com" target="_blank" rel="noreferrer noopener">
@@ -21,5 +79,7 @@
   <script>
     try { window.location.replace('https://www.gdquest.com'); } catch {}
   </script>
+  <script src="../js/nav.js"></script>
+  <script src="../js/i18n.js"></script>
 </body>
 </html>
