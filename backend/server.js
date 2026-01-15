@@ -378,6 +378,29 @@ app.get('/api/companies', async (req, res) => {
     }
 });
 
+app.get('/api/platforms', async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
+    const cacheKey = `platforms:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
+    try {
+        const platforms = await igdbQuery('platforms', `
+            fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
+            where platform_logo != null & category = (1,5);
+            sort generation desc;
+            limit ${limit};
+        `);
+
+        cacheSet(cacheKey, platforms, 15 * 60 * 1000);
+        res.json(platforms);
+    } catch (error) {
+        console.error('Platforms failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
+        res.status(500).json({ error: 'Failed to fetch platforms' });
+    }
+});
+
 app.get('/api/companies/all', async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
     const page = Math.max(Number(req.query.page || 1), 1);

@@ -72,6 +72,14 @@ const FALLBACK_COMPANIES = [
     { id: 5, name:'Square Enix', logo:{ image_id:'co3loq' }, avg_rating: 85.3 }
 ];
 
+const FALLBACK_PLATFORMS = [
+    { id: 48, name: 'PlayStation 4', platform_logo: { image_id: 'pl6m' }, generation: 8 },
+    { id: 49, name: 'Xbox One', platform_logo: { image_id: 'pl6n' }, generation: 8 },
+    { id: 130, name: 'Nintendo Switch', platform_logo: { image_id: 'pl6p' }, generation: 8 },
+    { id: 167, name: 'PlayStation 5', platform_logo: { image_id: 'pl76' }, generation: 9 },
+    { id: 169, name: 'Xbox Series X|S', platform_logo: { image_id: 'pl79' }, generation: 9 }
+];
+
 const FALLBACK_EVENTS = [
     {
         name: 'Event 1',
@@ -137,6 +145,11 @@ function logoUrl(c){
     return id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${id}.png` : 'https://placehold.co/200x200/fff/111?text=Logo';
 }
 
+function logoUrlPlatform(p){
+    const id = p.platform_logo ? p.platform_logo.image_id : '';
+    return id ? `https://images.igdb.com/igdb/image/upload/t_logo_med/${id}.png` : 'https://placehold.co/200x200/fff/111?text=Console';
+}
+
 async function fetchCompanies(){
     const url = `${apiBase()}/api/companies?limit=12`;
     try{
@@ -149,6 +162,26 @@ async function fetchCompanies(){
     }
 }
 
+async function fetchPlatforms(){
+    const url = `${apiBase()}/api/platforms?limit=12`;
+    try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.statusText);
+        return await res.json();
+    }catch(e){
+        console.error('Fetch platforms error', e);
+        return FALLBACK_PLATFORMS;
+    }
+}
+
+function sortByRatingDesc(items){
+    return [...(items || [])].sort((a,b)=>{
+        const ar = typeof a.avg_rating === 'number' ? a.avg_rating : -1;
+        const br = typeof b.avg_rating === 'number' ? b.avg_rating : -1;
+        return br - ar;
+    });
+}
+
 function renderCompanies(listEl, companies){
     if(!listEl) return;
     listEl.innerHTML = '';
@@ -158,7 +191,9 @@ function renderCompanies(listEl, companies){
         return;
     }
 
-    companies.forEach((c, idx) => {
+    const ordered = sortByRatingDesc(companies);
+
+    ordered.forEach((c, idx) => {
         const item = document.createElement('div');
         item.className = 'company-item';
         item.dataset.companyId = c.id || idx;
@@ -172,6 +207,34 @@ function renderCompanies(listEl, companies){
         item.addEventListener('click', () => {
             const cid = item.dataset.companyId;
             window.location.href = `company.html?id=${cid}`;
+        });
+        listEl.appendChild(item);
+    });
+}
+
+function renderPlatforms(listEl, platforms){
+    if(!listEl) return;
+    listEl.innerHTML = '';
+
+    if(!platforms || !platforms.length){
+        listEl.innerHTML = `<div class="platform-placeholder">${tr('results.emptyPlatforms', 'Sin consolas')}</div>`;
+        return;
+    }
+
+    platforms.forEach((p, idx) => {
+        const item = document.createElement('div');
+        item.className = 'platform-item';
+        item.dataset.platformId = p.id || idx;
+        item.innerHTML = `
+            <div class="platform-logo"><img src="${logoUrlPlatform(p)}" alt="${p.name}"></div>
+            <div class="platform-rect">
+                <div class="platform-name">${p.name}</div>
+                <div class="platform-meta">${p.generation ? `${tr('platform.generation', 'Generación')} ${p.generation}` : tr('common.noData', 'Sin datos')}</div>
+            </div>
+        `;
+        item.addEventListener('click', () => {
+            const pid = item.dataset.platformId;
+            window.location.href = `platform.html?id=${pid}`;
         });
         listEl.appendChild(item);
     });
@@ -420,6 +483,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const companiesPrevBtn = document.querySelector('.companies-wrapper .carousel-nav.left');
     const companiesNextBtn = document.querySelector('.companies-wrapper .carousel-nav.right');
 
+    const platformsContainer = document.querySelector('.platforms-list');
+    const platformsPrevBtn = document.querySelector('.platforms-wrapper .carousel-nav.left');
+    const platformsNextBtn = document.querySelector('.platforms-wrapper .carousel-nav.right');
+
     if (companiesContainer && companiesPrevBtn && companiesNextBtn)
     {
         companiesPrevBtn.addEventListener('click', () => {
@@ -431,11 +498,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (platformsContainer && platformsPrevBtn && platformsNextBtn)
+    {
+        platformsPrevBtn.addEventListener('click', () => {
+            platformsContainer.scrollBy({ left: -200, behavior: 'smooth' });
+        });
+
+        platformsNextBtn.addEventListener('click', () => {
+            platformsContainer.scrollBy({ left: 200, behavior: 'smooth' });
+        });
+    }
+
     (async () => {
         const listEl = document.querySelector('[data-company-list]');
         if (!listEl) return;
         const companies = await fetchCompanies();
         renderCompanies(listEl, companies);
+    })();
+
+    (async () => {
+        const listEl = document.querySelector('[data-platform-list]');
+        if (!listEl) return;
+        const platforms = await fetchPlatforms();
+        renderPlatforms(listEl, platforms);
     })();
 
     loadHeroSlider();
