@@ -46,21 +46,18 @@ function pickRssImage(item) {
     const enclosureUrl = item?.enclosure?.url;
     if (enclosureUrl) return enclosureUrl;
 
-    // Some feeds provide media:content or media:thumbnail in custom fields.
     const mediaContent = item?.['media:content']?.['$']?.url || item?.['media:content']?.url;
     if (mediaContent) return mediaContent;
 
     const mediaThumb = item?.['media:thumbnail']?.['$']?.url || item?.['media:thumbnail']?.url;
     if (mediaThumb) return mediaThumb;
 
-    // Fallback: try to extract first <img src="..."> from HTML content.
     const html = item?.content || item?.['content:encoded'] || '';
     const match = String(html).match(/<img[^>]+src=["']([^"']+)["']/i);
     return match ? match[1] : '';
 }
 
 const RSS_FEEDS_ES = [
-    // Spanish gaming news sources.
     { name: 'Eurogamer ES', url: 'https://www.eurogamer.es/feed' },
     { name: 'Vandal', url: 'https://vandal.elespanol.com/rss/noticias.xml' },
     { name: 'MeriStation', url: 'https://as.com/meristation/feed/' }
@@ -86,6 +83,47 @@ let rssNewsCache = {
     es: { at: 0, ttlMs: 10 * 60 * 1000, items: [] },
     en: { at: 0, ttlMs: 10 * 60 * 1000, items: [] }
 };
+
+const memoryCache = new Map(); // key -> { at, ttlMs, data }
+
+function cacheGet(key){
+    const entry = memoryCache.get(key);
+    if(!entry) return null;
+    const now = Date.now();
+    if(now - entry.at > entry.ttlMs){
+        memoryCache.delete(key);
+        return null;
+    }
+    return entry.data;
+}
+
+function cacheSet(key, data, ttlMs){
+    memoryCache.set(key, { at: Date.now(), ttlMs, data });
+}
+
+function sleep(ms){
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function attachGameMatch(events){
+    if(!Array.isArray(events) || !events.length) return events;
+    return Promise.all(events.map(async (ev) => {
+        const name = (ev?.name || '').trim();
+        if(!name) return { ...ev, related_game: null };
+        try {
+            const safeName = name.replace(/"/g, '\\"');
+            const games = await igdbQuery('games', `
+                fields id, name, slug;
+                search "${safeName}";
+                limit 1;
+            `);
+            const g = Array.isArray(games) && games[0] ? games[0] : null;
+            return { ...ev, related_game: g ? { id: g.id, name: g.name, slug: g.slug } : null };
+        } catch {
+            return { ...ev, related_game: null };
+        }
+    }));
+}
 
 async function fetchRssNews(limit, lang) {
     const resolvedLang = normalizeNewsLang(lang);
@@ -155,7 +193,7 @@ async function getAccessToken() {
 
 async function igdbQuery(resource, query) {
     const token = await getAccessToken();
-    const response = await axios({
+    const request = () => axios({
         url: `https://api.igdb.com/v4/${resource}`,
         method: 'POST',
         headers: {
@@ -165,19 +203,38 @@ async function igdbQuery(resource, query) {
         },
         data: query
     });
-    return response.data;
+
+    try {
+        const response = await request();
+        return response.data;
+    } catch (err) {
+        const status = err?.response?.status;
+        if (status === 429) {
+            await sleep(800);
+            const retry = await request();
+            return retry.data;
+        }
+        throw err;
+    }
 }
 
 app.get('/api/top-games', async (req, res) => {
     try {
         const limit = Number(req.query.limit || 10);
         const order = req.query.order === 'new' ? 'first_release_date desc' : 'rating desc';
+        const cacheKey = `top-games:${order}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
+
         const data = await igdbQuery('games', `
-            fields id, name, cover.image_id, screenshots.image_id, artworks.image_id, rating, rating_count, summary, slug, first_release_date;
+            fields id, name, cover.image_id, rating, rating_count, slug, first_release_date;
             sort ${order};
             where rating != null & cover != null & rating_count > 50;
             limit ${Math.min(Math.max(limit,1),100)};
         `);
+        cacheSet(cacheKey, data, 5 * 60 * 1000);
         res.json(data);
     } catch (error) {
         console.error(error);
@@ -192,6 +249,12 @@ app.get('/api/games/recent', async (req, res) => {
         const now = Math.floor(Date.now() / 1000);
         const since = now - (windowDays * 86400);
 
+        const cacheKey = `recent:${windowDays}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
+
         const data = await igdbQuery('games', `
             fields name, cover.image_id, first_release_date, release_dates.human, slug, id;
             where first_release_date != null & first_release_date >= ${since} & first_release_date <= ${now} & cover != null;
@@ -199,6 +262,7 @@ app.get('/api/games/recent', async (req, res) => {
             limit ${limit};
         `);
 
+        cacheSet(cacheKey, data, 3 * 60 * 1000);
         res.json(data);
     } catch (error) {
         console.error(error);
@@ -213,6 +277,12 @@ app.get('/api/games/upcoming', async (req, res) => {
         const now = Math.floor(Date.now() / 1000);
         const until = now + (windowDays * 86400);
 
+        const cacheKey = `upcoming:${windowDays}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
+
         const data = await igdbQuery('games', `
             fields name, cover.image_id, first_release_date, release_dates.human, slug, id;
             where first_release_date != null & first_release_date > ${now} & first_release_date <= ${until} & cover != null;
@@ -220,6 +290,7 @@ app.get('/api/games/upcoming', async (req, res) => {
             limit ${limit};
         `);
 
+        cacheSet(cacheKey, data, 3 * 60 * 1000);
         res.json(data);
     } catch (error) {
         console.error(error);
@@ -324,12 +395,19 @@ app.get('/api/search/games', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
+        const cacheKey = `search:games:${q}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
+
         const data = await igdbQuery('games', `
             fields id, name, slug, cover.image_id, rating, first_release_date;
             search "${q}";
             limit ${limit};
         `);
 
+        cacheSet(cacheKey, data, 90 * 1000);
         res.json(data);
     } catch (error) {
         console.error('Search games failed', error?.response?.data || error.message || error);
@@ -342,6 +420,12 @@ app.get('/api/search/companies', async (req, res) => {
         const q = (req.query.q || '').trim();
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
+
+        const cacheKey = `search:companies:${q}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
 
         let data = await igdbQuery('companies', `
             fields id, name, slug, logo.image_id, country, start_date;
@@ -357,6 +441,7 @@ app.get('/api/search/companies', async (req, res) => {
             `);
         }
 
+        cacheSet(cacheKey, data, 90 * 1000);
         res.json(data);
     } catch (error) {
         console.error('Search companies failed', error?.response?.data || error.message || error);
@@ -370,6 +455,12 @@ app.get('/api/search/platforms', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         if (!q) return res.status(400).json({ error: 'Missing query' });
 
+        const cacheKey = `search:platforms:${q}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
+
         const data = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
             search "${q}";
@@ -377,6 +468,7 @@ app.get('/api/search/platforms', async (req, res) => {
             limit ${limit};
         `);
 
+        cacheSet(cacheKey, data, 90 * 1000);
         res.json(data);
     } catch (error) {
         console.error('Search platforms failed', error?.response?.data || error.message || error);
@@ -389,6 +481,12 @@ app.get('/api/search/all', async (req, res) => {
         const q = (req.query.q || '').trim();
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 30);
         if (!q) return res.status(400).json({ error: 'Missing query' });
+
+        const cacheKey = `search:all:${q}:${limit}`;
+        const cached = cacheGet(cacheKey);
+        if(cached){
+            return res.json(cached);
+        }
 
         const [games, companies, platforms] = await Promise.all([
             igdbQuery('games', `
@@ -418,7 +516,9 @@ app.get('/api/search/all', async (req, res) => {
             `);
         }
 
-        res.json({ games, companies: companiesFinal, platforms });
+        const payload = { games, companies: companiesFinal, platforms };
+        cacheSet(cacheKey, payload, 90 * 1000);
+        res.json(payload);
     } catch (error) {
         console.error('Search all failed', error?.response?.data || error.message || error);
         res.status(200).json({ games: [], companies: [], platforms: [] });
@@ -478,14 +578,48 @@ app.get('/api/games/by-platform', async (req, res) => {
 app.get('/api/events', async (req, res) => {
     try {
         const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
-        const now = Math.floor(Date.now() / 1000);
-        const windowPast = now - (30 * 86400);
+        const withGames = String(req.query.withGames || '').toLowerCase() === 'true' || req.query.withGames === '1';
 
         const events = await igdbQuery('events', `
-            fields id, name, slug, start_time, end_time, event_logo.image_id, description, live_stream_url, event_networks.url;
-            where start_time != null & start_time >= ${windowPast};
-            sort start_time asc;
+            fields id, name, slug, event_logo.image_id, description, live_stream_url, event_networks.url;
+            sort name asc;
             limit ${limit};
+        `);
+
+        let normalized = (events || []).map(e => ({
+            ...e,
+            url: e?.live_stream_url || (Array.isArray(e?.event_networks) && e.event_networks[0]?.url ? e.event_networks[0].url : '')
+        }));
+
+        if (withGames) {
+            normalized = await attachGameMatch(normalized);
+        }
+
+        res.json(normalized);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch events' });
+    }
+});
+
+app.get('/api/game-events', async (req, res) => {
+    try {
+        const gameName = String(req.query.name || '').trim();
+        const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 30);
+        if (!gameName) return res.status(400).json({ error: 'Missing game name' });
+
+        // Resolve the target game once to use its id/name for filtering.
+        const targetGames = await igdbQuery('games', `
+            fields id, name, slug;
+            search "${gameName.replace(/"/g, '\"')}";
+            limit 1;
+        `);
+        const target = Array.isArray(targetGames) && targetGames[0] ? targetGames[0] : null;
+
+        const poolSize = Math.min(limit * 6, 120);
+        const events = await igdbQuery('events', `
+            fields id, name, slug, event_logo.image_id, description, live_stream_url, event_networks.url;
+            limit ${poolSize};
         `);
 
         const normalized = (events || []).map(e => ({
@@ -493,10 +627,24 @@ app.get('/api/events', async (req, res) => {
             url: e?.live_stream_url || (Array.isArray(e?.event_networks) && e.event_networks[0]?.url ? e.event_networks[0].url : '')
         }));
 
-        res.json(normalized);
+        const enriched = await attachGameMatch(normalized);
+
+        const needle = (target?.name || gameName).toLowerCase();
+        const filtered = enriched.filter(ev => {
+            const rg = ev.related_game || {};
+            const matchId = target && rg.id && target.id && rg.id === target.id;
+            const rgName = (rg.name || '').toLowerCase();
+            const title = (ev.name || '').toLowerCase();
+            const desc = (ev.description || '').toLowerCase();
+            return matchId || rgName.includes(needle) || title.includes(needle) || desc.includes(needle);
+        });
+
+        const pool = filtered.length ? filtered : enriched;
+        const result = pool.slice(0, limit);
+        res.json(result);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to fetch events' });
+        console.error('Game events failed', error?.response?.data || error.message || error);
+        res.status(500).json([]);
     }
 });
 

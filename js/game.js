@@ -27,6 +27,16 @@ function youtubeThumb(videoId){
   return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
 }
 
+function eventImage(ev){
+  const id = ev?.event_logo?.image_id;
+  return id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${id}.jpg` : 'https://placehold.co/640x360/222/fff?text=Evento';
+}
+
+function formatEventDate(ts, locale){
+  if(!ts) return '';
+  return new Date(ts*1000).toLocaleString(locale, { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
 function renderMain(item, name){
   if(item.type==='video'){
     const poster = item.poster || item.thumb || '';
@@ -88,6 +98,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const labelStory = tr('game.story', 'Historia');
   const labelReleaseToday = tr('game.releaseToday', 'Lanza hoy');
   const labelReleaseIn = tr('game.releaseIn', 'Lanza en');
+  const labelEvents = tr('game.events', 'Eventos');
+  const labelEventsEmpty = tr('game.noEvents', 'Sin eventos para este juego');
+  const labelLoading = tr('common.loading', 'Cargando...');
+  const labelVisit = tr('common.visitLink', 'Visitar enlace');
+  const labelViewGame = tr('game.viewGame', 'Ver juego');
 
   const name = game.name || 'Juego';
   const poster = imgUrl('t_cover_big', game.cover?.image_id);
@@ -180,9 +195,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         </section>
 
-        <section class="game-description bg-panel border border-border rounded-lg p-4 space-y-2">
-          <h4 class="text-lg font-semibold">${labelStory}</h4>
-          <p class="text-gray-200 leading-relaxed text-sm">${String(long||tr('main.noDescription','Sin descripción')).replace(/\n/g,'<br>')}</p>
+        <section class="bg-panel border border-border rounded-lg p-4 space-y-4">
+          <div class="game-tabbar">
+            <button class="game-tab active" data-tab-target="summary">${labelSummary}</button>
+            <button class="game-tab" data-tab-target="events">${labelEvents}</button>
+          </div>
+          <div id="tab-summary" class="tab-panel space-y-3">
+            <h4 class="text-lg font-semibold">${labelStory}</h4>
+            <p class="text-gray-200 leading-relaxed text-sm">${String(long||tr('main.noDescription','Sin descripción')).replace(/\n/g,'<br>')}</p>
+          </div>
+          <div id="tab-events" class="tab-panel hidden">
+            <div id="gameEvents" class="game-events-grid text-sm text-gray-300">${labelLoading}</div>
+          </div>
         </section>
       </div>
     </div>
@@ -217,6 +241,82 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(tick()) clearInterval(timer);
       }, 1000);
     }
+  }
+
+  const eventsContainer = document.getElementById('gameEvents');
+  const tabButtons = Array.from(root.querySelectorAll('[data-tab-target]'));
+  const tabPanels = {
+    summary: document.getElementById('tab-summary'),
+    events: document.getElementById('tab-events')
+  };
+  let eventsLoaded = false;
+
+  function renderEventCard(ev){
+    const desc = ev.description ? ev.description.slice(0, 200) + (ev.description.length > 200 ? '...' : '') : labelNoSummary;
+    const start = noDate;
+    const when = start;
+    const link = ev.url || '';
+    const title = ev.name || labelEvents;
+    const gameLink = ev.related_game ? (ev.related_game.id ? `game.html?id=${ev.related_game.id}` : (ev.related_game.slug ? `game.html?slug=${ev.related_game.slug}` : '')) : '';
+    const links = [
+      gameLink ? `<a class="game-event-link" href="${gameLink}">${labelViewGame}</a>` : '',
+      link ? `<a class="game-event-link" href="${link}" target="_blank" rel="noreferrer noopener">${labelVisit}</a>` : ''
+    ].filter(Boolean).join('');
+    return `
+      <article class="game-event-card">
+        <img src="${eventImage(ev)}" alt="${title}">
+        <div class="game-event-body">
+          <div class="game-event-meta">${when}</div>
+          <div class="game-event-title">${title}</div>
+          <div class="game-event-desc">${desc}</div>
+          ${links ? `<div class="game-event-actions flex gap-3">${links}</div>` : ''}
+        </div>
+      </article>
+    `;
+  }
+
+  function renderEventsGrid(events){
+    if(!eventsContainer) return;
+    if(!events || !events.length){
+      eventsContainer.innerHTML = `<p class="text-gray-400 text-sm">${labelEventsEmpty}</p>`;
+      return;
+    }
+    eventsContainer.innerHTML = events.map(renderEventCard).join('');
+  }
+
+  async function loadGameEvents(gameName){
+    if(!eventsContainer) return;
+    eventsContainer.innerHTML = `<p class="text-gray-400 text-sm">${labelLoading}</p>`;
+    try{
+      const res = await fetch(`${apiBase()}/api/game-events?name=${encodeURIComponent(gameName)}&limit=9&withGames=1`);
+      if(!res.ok) throw new Error(res.statusText);
+      const events = await res.json();
+      renderEventsGrid(events || []);
+    }catch(e){
+      console.error('Game events fetch failed', e);
+      eventsContainer.innerHTML = `<p class="text-gray-400 text-sm">${labelEventsEmpty}</p>`;
+    }
+  }
+
+  function activateTab(target){
+    tabButtons.forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.tabTarget === target);
+    });
+    Object.entries(tabPanels).forEach(([key, panel])=>{
+      if(!panel) return;
+      panel.classList.toggle('hidden', key !== target);
+    });
+    if(target === 'events' && !eventsLoaded){
+      eventsLoaded = true;
+      loadGameEvents(name);
+    }
+  }
+
+  if(tabButtons.length){
+    tabButtons.forEach(btn=>{
+      btn.addEventListener('click', ()=> activateTab(btn.dataset.tabTarget));
+    });
+    activateTab('summary');
   }
 
   const mainEl = document.getElementById('mainMedia');

@@ -102,3 +102,82 @@ ul {
     color: #aaa;
     font-size: 0.8rem;
 }
+
+.game-tabbar {
+    display: flex;
+    gap: 22px;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 12px;
+}
+
+.game-tab {
+    background: transparent;
+    border: none;
+    color: #cfcfcf;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 8px 0;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.game-tab.active {
+    color: #ffffff;
+    border-color: #ff0000;
+}
+
+.game-events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.game-event-card {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.game-event-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+}
+
+.game-event-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.game-event-meta {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.game-event-title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.game-event-desc {
+    color: #d2d2d2;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.game-event-link {
+    margin-top: auto;
+    color: #ff0000;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+}

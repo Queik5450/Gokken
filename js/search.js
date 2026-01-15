@@ -54,6 +54,9 @@ function setupNavSearch(){
     wrapper.appendChild(box);
 
     let timer = null;
+    const suggestionCache = new Map(); // q -> { at, data }
+    const ttlMs = 60 * 1000;
+    let inFlight = null;
 
     function hideSuggestions(){ box.style.display = 'none'; }
     function showSuggestions(){ box.style.display = box.innerHTML.trim() ? 'block' : 'none'; }
@@ -120,12 +123,26 @@ function setupNavSearch(){
     async function handleInput(){
         const q = (input.value || '').trim();
         if(q.length < 2){ box.innerHTML=''; hideSuggestions(); return; }
+
+        const cached = suggestionCache.get(q);
+        const now = Date.now();
+        if(cached && now - cached.at < ttlMs){
+            renderSuggestions(cached.data);
+            return;
+        }
+
+        const ticket = Symbol('req');
+        inFlight = ticket;
         try{
             const results = await fetchSuggestions(q);
+            if(inFlight !== ticket) return; // stale
+            suggestionCache.set(q, { at: Date.now(), data: results });
             renderSuggestions(results);
         }catch(e){
-            console.error('Suggest error', e);
-            hideSuggestions();
+            if(inFlight === ticket){
+                console.error('Suggest error', e);
+                hideSuggestions();
+            }
         }
     }
 
@@ -145,7 +162,7 @@ function setupNavSearch(){
 
     input.addEventListener('input', ()=>{
         clearTimeout(timer);
-        timer = setTimeout(handleInput, 200);
+        timer = setTimeout(handleInput, 350);
     });
 
     icon?.addEventListener('click', ()=>{ hideSuggestions(); go(); });
