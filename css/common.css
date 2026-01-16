@@ -96,6 +96,32 @@ header {
 .search-bar {
     position: relative;
     z-index: 60;
+    flex: 1 1 380px;
+    max-width: 520px;
+    transition: flex-basis 0.2s ease, max-width 0.2s ease;
+}
+
+.header-container:focus-within .search-bar {
+    flex-basis: 640px;
+    max-width: 700px;
+}
+
+.header-container:focus-within .logo,
+.header-container:focus-within .site-nav,
+.header-container:focus-within .lang-switch,
+.header-container:focus-within .nav-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .search-bar {
+        flex-basis: 100%;
+        max-width: 100%;
+    }
+    .header-container:focus-within .search-bar {
+        flex-basis: 100%;
+        max-width: 100%;
+    }
 }
 
 .search-input-wrapper {
