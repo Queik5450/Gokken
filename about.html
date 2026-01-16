@@ -207,6 +207,37 @@
                     </div>
                 </div>
             </section>
+
+            <section class="space-y-4">
+                <h2 class="text-2xl font-bold border-l-4 border-primary pl-4" data-i18n="about.contactTitle">Contacto</h2>
+                <p class="text-gray-300" data-i18n="about.contactHint">Envíanos tus dudas o sugerencias.</p>
+                <form class="contact-card" action="https://formspree.io/f/xeeeodzp" method="POST">
+                    <input type="hidden" name="_next" value="about.html?sent=1">
+                    <input type="hidden" name="_subject" value="Nuevo mensaje desde Gokken">
+                    <div class="contact-grid">
+                        <label class="contact-field">
+                            <span data-i18n="about.contactName">Nombre</span>
+                            <input type="text" name="name" required placeholder="Tu nombre" data-i18n-placeholder="about.contactNamePlaceholder">
+                        </label>
+                        <label class="contact-field">
+                            <span data-i18n="about.contactEmail">Email</span>
+                            <input type="email" name="email" required placeholder="tucorreo@email.com" data-i18n-placeholder="about.contactEmailPlaceholder">
+                        </label>
+                    </div>
+                    <label class="contact-field">
+                        <span data-i18n="about.contactSubject">Asunto</span>
+                        <input type="text" name="subject" required placeholder="Motivo" data-i18n-placeholder="about.contactSubjectPlaceholder">
+                    </label>
+                    <label class="contact-field">
+                        <span data-i18n="about.contactMessage">Mensaje</span>
+                        <textarea name="message" rows="5" required placeholder="Escribe tu mensaje" data-i18n-placeholder="about.contactMessagePlaceholder"></textarea>
+                    </label>
+                    <div class="contact-actions">
+                        <button type="submit" class="contact-submit" data-i18n="about.contactSubmit">Enviar</button>
+                        <span class="contact-note" data-i18n="about.contactNote">Responderemos a tu correo.</span>
+                    </div>
+                </form>
+            </section>
         </div>
     </main>
 

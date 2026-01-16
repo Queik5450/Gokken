@@ -42,7 +42,19 @@
         companies: 'Compañías',
         platforms: 'Consolas',
         about: 'Acerca de',
-        learn: 'Aprender'
+          membersHint: 'Datos con los nombres y roles del equipo.',
+          contactTitle: 'Contacto',
+          contactHint: 'Envíanos tus dudas o sugerencias.',
+          contactName: 'Nombre',
+          contactEmail: 'Email',
+          contactSubject: 'Asunto',
+          contactMessage: 'Mensaje',
+          contactSubmit: 'Enviar',
+          contactNote: 'Responderemos a tu correo.',
+          contactNamePlaceholder: 'Tu nombre',
+          contactEmailPlaceholder: 'tucorreo@email.com',
+          contactSubjectPlaceholder: 'Motivo',
+          contactMessagePlaceholder: 'Escribe tu mensaje'
       },
       search: {
         placeholder: 'Buscar',
@@ -245,7 +257,19 @@
         companies: 'Companies',
         platforms: 'Consoles',
         about: 'About',
-        learn: 'Learn'
+          membersHint: 'Data with team member names and roles.',
+          contactTitle: 'Contact',
+          contactHint: 'Send us your questions or suggestions.',
+          contactName: 'Name',
+          contactEmail: 'Email',
+          contactSubject: 'Subject',
+          contactMessage: 'Message',
+          contactSubmit: 'Send',
+          contactNote: 'We will reply to your email.',
+          contactNamePlaceholder: 'Your name',
+          contactEmailPlaceholder: 'youremail@example.com',
+          contactSubjectPlaceholder: 'Reason',
+          contactMessagePlaceholder: 'Write your message'
       },
       search: {
         placeholder: 'Search',
