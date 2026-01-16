@@ -443,21 +443,12 @@ app.get('/api/platforms', async (req, res) => {
     if (cached) return res.json(cached);
 
     try {
-        let platforms = await igdbQuery('platforms', `
+        // Broaden the filter to all platform categories (includes OS/PC) and do not require a logo
+        const platforms = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
-            where platform_logo != null & category = (1,5);
             sort generation desc;
             limit ${limit};
         `);
-
-        if (!Array.isArray(platforms) || platforms.length === 0) {
-            platforms = await igdbQuery('platforms', `
-                fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
-                where category = (1,5);
-                sort generation desc;
-                limit ${limit};
-            `);
-        }
 
         cacheSet(cacheKey, platforms, 15 * 60 * 1000);
         res.json(platforms || []);
@@ -477,9 +468,9 @@ app.get('/api/platforms/all', async (req, res) => {
 
     try {
         const offset = (page - 1) * limit;
+        // Broaden category filter and keep logos optional so we fetch all platforms, including PC/OS
         const platforms = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
-            where category = (1,5);
             sort name asc;
             limit ${limit + 1};
             offset ${offset};
@@ -678,7 +669,6 @@ app.get('/api/search/platforms', async (req, res) => {
         const data = await withTimeout(igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
             search "${q}";
-            where platform_logo != null;
             limit ${limit};
         `), 3500, []);
         cacheSet(cacheKey, data, 2 * 60 * 1000);
@@ -713,7 +703,6 @@ app.get('/api/search/all', async (req, res) => {
             withTimeout(igdbQuery('platforms', `
                 fields id, name, slug, abbreviation, generation, platform_logo.image_id, platform_family.name;
                 search "${q}";
-                where platform_logo != null;
                 limit ${limit};
             `), 3500, [])
         ]);
