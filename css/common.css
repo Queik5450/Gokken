@@ -109,26 +109,16 @@ header {
     transition: flex-basis 0.2s ease, max-width 0.2s ease;
 }
 
-.header-container:focus-within .search-bar {
-    flex-basis: 640px;
-    max-width: 700px;
-}
-
-.header-container:focus-within .logo,
-.header-container:focus-within .site-nav,
-.header-container:focus-within .lang-switch {
-    display: none;
-}
+/* Removed search expansion and hiding of header controls on focus to keep
+   all header buttons clickable on mobile. */
 
 @media (max-width: 768px) {
     .search-bar {
         flex-basis: 100%;
         max-width: 100%;
     }
-    .header-container:focus-within .search-bar {
-        flex-basis: 100%;
-        max-width: 100%;
-    }
+    /* Prevent any focus-triggered expansion on mobile */
+    /* (No focus-within rules for .search-bar) */
 }
 
 .search-input-wrapper {
