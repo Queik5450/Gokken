@@ -443,7 +443,6 @@ app.get('/api/platforms', async (req, res) => {
     if (cached) return res.json(cached);
 
     try {
-        // Broaden the filter to all platform categories (includes OS/PC) and do not require a logo
         const platforms = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
             sort generation desc;
@@ -468,7 +467,6 @@ app.get('/api/platforms/all', async (req, res) => {
 
     try {
         const offset = (page - 1) * limit;
-        // Broaden category filter and keep logos optional so we fetch all platforms, including PC/OS
         const platforms = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
             sort name asc;
