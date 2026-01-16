@@ -170,8 +170,9 @@
 }
 
 
-.list-item {
-    display: flex;
+.list-items .list-item {
+    display: flex !important;
+    flex-direction: row !important;
     align-items: center;
     gap: 16px;
     list-style: none;
@@ -183,7 +184,7 @@
     min-width: 0;
 }
 
-.list-item img {
+.list-items .list-item img {
     width: 146px;
     height: 86px;
     object-fit: cover;
@@ -198,12 +199,13 @@
     line-height: 1.25;
 }
 
-.item-details {
+.list-items .item-details {
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 2px;
     min-width: 0;
+    flex: 1 1 auto;
 }
 
 .item-details .status {
