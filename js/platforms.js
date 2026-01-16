@@ -75,14 +75,26 @@ function renderPlatforms(gridEl, emptyEl, platforms){
 async function fetchPlatformsPage(page, limit){
     const base = apiBase();
     try {
-        const res = await fetch(`${base}/api/platforms?limit=${encodeURIComponent(limit)}`);
+        const res = await fetch(`${base}/api/platforms/all?page=${encodeURIComponent(page)}&limit=${encodeURIComponent(limit)}`);
         if(!res.ok) throw new Error(res.statusText);
         const data = await res.json();
         const items = Array.isArray(data) ? data : (data.items || []);
-        return { items, hasMore: false, page, limit };
+        const hasMore = typeof data?.hasMore === 'boolean' ? data.hasMore : false;
+        const safeItems = items.length ? items : FALLBACK_PLATFORMS;
+        return { items: safeItems, hasMore: items.length ? hasMore : false, page: data?.page || page, limit: data?.limit || limit };
     } catch (err) {
-        console.warn('Platforms endpoint failed, using fallback list', err);
-        return { items: FALLBACK_PLATFORMS, hasMore: false, page, limit };
+        console.warn('Platforms all endpoint failed, falling back', err);
+        try {
+            const fallbackRes = await fetch(`${base}/api/platforms?limit=${encodeURIComponent(limit)}`);
+            if(!fallbackRes.ok) throw new Error(fallbackRes.statusText);
+            const data = await fallbackRes.json();
+            const items = Array.isArray(data) ? data : (data.items || []);
+            const safeItems = items.length ? items : FALLBACK_PLATFORMS;
+            return { items: safeItems, hasMore: false, page, limit };
+        } catch (fallbackErr) {
+            console.warn('Platforms fallback failed, using local list', fallbackErr);
+            return { items: FALLBACK_PLATFORMS, hasMore: false, page, limit };
+        }
     }
 }
 

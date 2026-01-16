@@ -108,7 +108,9 @@ function renderPlatform(root, data){
         tr('platform.versionPro', 'Pro'),
         tr('platform.versionDigital', 'Edición Digital')
     ];
-    const featuredList = Array.isArray(data.featuredGames) && data.featuredGames.length ? data.featuredGames : FALLBACK_FEATURED;
+    const featuredListRaw = Array.isArray(data.featuredGames) && data.featuredGames.length ? data.featuredGames : FALLBACK_FEATURED;
+    const ratingValue = (g) => typeof g?.rating === 'number' ? g.rating : -1;
+    const featuredList = [...featuredListRaw].sort((a, b) => ratingValue(b) - ratingValue(a));
 
     const gameHref = (g) => {
         if (!g) return '#';
@@ -182,25 +184,34 @@ function renderPlatform(root, data){
             <section class="space-y-4">
                 <div class="flex items-center justify-between">
                     <h2 class="text-2xl font-black text-gray-100">${tr('platform.featuredGames', 'Juegos Destacados')}</h2>
-                    <a href="#" class="text-primary font-semibold flex items-center gap-2 hover:underline">${tr('common.viewAll', 'Ver todos')} <i class="fa-solid fa-chevron-right"></i></a>
+                    <a href="${data.id ? `featuredGames.html?id=${data.id}` : '#'}" class="text-primary font-semibold flex items-center gap-2 hover:underline">${tr('common.viewAll', 'Ver todos')} <i class="fa-solid fa-chevron-right"></i></a>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="w-10 h-10 flex items-center justify-center rounded-full border border-border bg-panel text-primary hover:border-primary"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="flex gap-4 overflow-x-auto pb-3">
+                    <button data-featured-prev class="w-10 h-10 flex items-center justify-center rounded-full border border-border bg-panel text-primary hover:border-primary"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="featured-games-track flex gap-4 overflow-x-auto pb-3">
                         ${featuredList.map(g => `
                             <a class="w-48 bg-panel border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/30 flex-shrink-0 hover:border-primary" href="${gameHref(g)}">
                                 <div class="h-60 bg-neutral-800">
                                     <img src="${coverUrl(g)}" alt="${g.name || g.title || tr('search.tagGame', 'Juego')}" class="w-full h-full object-cover">
                                 </div>
-                                <div class="bg-primary/90 text-white text-center text-sm font-semibold py-3">${g.name || g.title || tr('search.tagGame', 'Juego')}</div>
+                                <div class="featured-game-title bg-primary/90 text-white text-center text-sm font-semibold py-3">${g.name || g.title || tr('search.tagGame', 'Juego')}</div>
                             </a>
                         `).join('')}
                     </div>
-                    <button class="w-10 h-10 flex items-center justify-center rounded-full border border-border bg-panel text-primary hover:border-primary"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button data-featured-next class="w-10 h-10 flex items-center justify-center rounded-full border border-border bg-panel text-primary hover:border-primary"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </section>
         </div>
     `;
+
+    const track = root.querySelector('.featured-games-track');
+    const prevBtn = root.querySelector('[data-featured-prev]');
+    const nextBtn = root.querySelector('[data-featured-next]');
+    const scrollStep = 260;
+    if(track && prevBtn && nextBtn){
+        prevBtn.addEventListener('click', () => track.scrollBy({ left: -scrollStep, behavior: 'smooth' }));
+        nextBtn.addEventListener('click', () => track.scrollBy({ left: scrollStep, behavior: 'smooth' }));
+    }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
