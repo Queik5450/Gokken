@@ -873,7 +873,7 @@ app.get('/api/events', async (req, res) => {
         const withGames = String(req.query.withGames || '').toLowerCase() === 'true' || req.query.withGames === '1';
 
         const events = await igdbQuery('events', `
-            fields id, name, slug, event_logo.image_id, description, live_stream_url, event_networks.url;
+            fields id, name, slug, start_time, event_logo.image_id, description, live_stream_url, event_networks.url;
             sort name asc;
             limit ${limit};
         `);
@@ -913,7 +913,7 @@ app.get('/api/game-events', async (req, res) => {
 
         const poolSize = Math.min(limit * 6, 120);
         const events = await igdbQuery('events', `
-            fields id, name, slug, event_logo.image_id, description, live_stream_url, event_networks.url;
+            fields id, name, slug, start_time, event_logo.image_id, description, live_stream_url, event_networks.url;
             limit ${poolSize};
         `);
 
