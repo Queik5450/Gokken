@@ -90,6 +90,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const labelSummary = tr('game.summary', 'Resumen');
   const labelNoSummary = tr('game.noSummary', 'Sin resumen disponible.');
   const labelGenres = tr('game.genres', 'Géneros');
+  const labelGameModes = tr('game.modes', 'Modos de juego');
+  const labelSeries = tr('game.series', 'Serie/Franquicia');
   const labelPlatforms = tr('game.platforms', 'Plataformas');
   const labelRating = tr('game.rating', 'Calificación');
   const labelClassification = tr('game.classification', 'Clasificación');
@@ -278,6 +280,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ratingColor = rating100 >= 75 ? '#00b374' : rating100 >= 50 ? '#e2b500' : '#e63b3b';
   const companies = (game.involved_companies||[]).map(ic=>ic.company?.name).filter(Boolean);
   const genres = (game.genres||[]).map(g=>({ id:g.id, name:g.name })).filter(g=>g.name);
+  const gameModes = (game.game_modes||[]).map(m=>m.name).filter(Boolean);
+  const seriesNames = (()=>{
+    const names = [];
+    if(game.collection?.name) names.push(game.collection.name);
+    if(Array.isArray(game.franchises)){
+      game.franchises.forEach(f=>{ if(f?.name) names.push(f.name); });
+    }
+    return Array.from(new Set(names));
+  })();
   const platforms = (game.platforms||[]).map(p=>({ id:p.id, name:p.name })).filter(p=>p.name);
   const themes = (game.themes||[]).map(t=>t.name).filter(Boolean);
   const keywords = (game.keywords||[]).map(k=>k.name).filter(Boolean);
@@ -342,12 +353,23 @@ document.addEventListener('DOMContentLoaded', async () => {
               <h4 class="text-lg font-semibold">${labelSummary}</h4>
               <p class="text-gray-200 text-sm leading-relaxed">${short || labelNoSummary}</p>
             </div>
-            <div class="info-grid grid grid-cols-2 gap-3">
+            <div class="info-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
                 <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelGenres}</div>
                 <div class="pill-row flex flex-wrap gap-2">${genres.map(g=>{
                   const query = g.id ? `genreId=${g.id}&genreName=${encodeURIComponent(g.name)}` : `q=${encodeURIComponent(g.name)}`;
                   return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${g.name}</a>`;
+                }).join('') || `<span class="pill">${nd}</span>`}</div>
+              </div>
+              <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelGameModes}</div>
+                <div class="pill-row flex flex-wrap gap-2">${gameModes.map(mode=>`<span class="pill inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm">${mode}</span>`).join('') || `<span class="pill">${nd}</span>`}</div>
+              </div>
+              <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
+                <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelSeries}</div>
+                <div class="pill-row flex flex-wrap gap-2">${seriesNames.map(name=>{
+                  const query = `q=${encodeURIComponent(name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${name}</a>`;
                 }).join('') || `<span class="pill">${nd}</span>`}</div>
               </div>
               <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
