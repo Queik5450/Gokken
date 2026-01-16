@@ -914,6 +914,8 @@ app.get('/api/game-events', async (req, res) => {
         const poolSize = Math.min(limit * 6, 120);
         const events = await igdbQuery('events', `
             fields id, name, slug, start_time, event_logo.image_id, description, live_stream_url, event_networks.url;
+            where start_time != null;
+            sort start_time desc;
             limit ${poolSize};
         `);
 
