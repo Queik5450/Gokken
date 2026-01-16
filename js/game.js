@@ -293,7 +293,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     }
-    // dedupe by type+id or name fallback
     const seen = new Set();
     return items.filter(item => {
       const key = item.id ? `${item.type}:${item.id}` : `${item.type}:${item.name}`;
@@ -469,7 +468,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Ensure initial badge styling is consistent when no fetch occurs
   updateBadge(classification);
 
   if(isFutureRelease){

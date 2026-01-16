@@ -1,18 +1,6 @@
 (function () {
   'use strict';
 
-  /**
-   * Simple client-side i18n.
-   *
-   * Usage:
-   *  - Add data-i18n="key" to elements for textContent replacement.
-   *  - Add data-i18n-html="key" to elements for innerHTML replacement.
-   *  - Add data-i18n-placeholder="key" for input/textarea placeholder.
-   *  - Add data-i18n-title="key" for title attribute.
-   *  - Add data-i18n-aria-label="key" for aria-label attribute.
-   *  - Add buttons/links with data-lang="es|en" to switch language.
-   */
-
   const DICTS = {
     es: {
       common: {
@@ -131,7 +119,6 @@
         aboutUs: 'Quiénes somos',
         featuredGames: 'Juegos destacados'
       },
-      // Used by dynamic pages (JS templates)
       noDescription: 'Sin descripción',
       releases: {
         title: 'Lanzamientos',
@@ -348,7 +335,6 @@
         aboutUs: 'About us',
         featuredGames: 'Featured games'
       },
-      // Used by dynamic pages (JS templates)
       noDescription: 'No description',
       releases: {
         title: 'Releases',
@@ -558,7 +544,6 @@
     const value = normalizeLang(lang);
     if (value === (window.__GOKKEN_LANG__ || 'es')) return;
     localStorage.setItem('gokken.lang', value);
-    // Reload so dynamic pages re-render in the new language.
     try {
       window.location.reload();
     } catch {

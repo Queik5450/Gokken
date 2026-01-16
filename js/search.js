@@ -47,7 +47,7 @@ function setupNavSearch(){
     wrapper.appendChild(box);
 
     let timer = null;
-    const suggestionCache = new Map(); // q -> { at, data }
+    const suggestionCache = new Map();
     const ttlMs = 60 * 1000;
     let inFlight = null;
     let controller = null;
@@ -74,7 +74,7 @@ function setupNavSearch(){
             showSuggestions();
             return;
         }
-        const games = payload.games || payload; // support old array shape
+        const games = payload.games || payload;
         const companies = payload.companies || [];
         const platforms = payload.platforms || [];
 
@@ -150,7 +150,7 @@ function setupNavSearch(){
             const timeoutId = setTimeout(() => controller.abort(), 2500);
             const results = await fetchSuggestions(q, controller.signal);
             clearTimeout(timeoutId);
-            if(inFlight !== ticket) return; // stale
+            if(inFlight !== ticket) return;
             suggestionCache.set(q, { at: Date.now(), data: results });
             renderSuggestions(results);
         }catch(e){
