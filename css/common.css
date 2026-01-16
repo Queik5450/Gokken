@@ -129,6 +129,55 @@ header {
     z-index: 60;
 }
 
+.stat-card {
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    background: #141414;
+    padding: 18px;
+}
+
+.stat-list {
+    display: grid;
+    gap: 10px;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) 1fr auto;
+    gap: 12px;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #d1d5db;
+}
+
+.stat-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stat-bar {
+    position: relative;
+    height: 8px;
+    background: #0f0f0f;
+    border-radius: 999px;
+    border: 1px solid #1f1f1f;
+    overflow: hidden;
+}
+
+.stat-bar span {
+    position: absolute;
+    inset: 0;
+    width: 0;
+    background: linear-gradient(90deg, rgba(255,0,0,0.85), rgba(255,0,0,0.5));
+    border-radius: 999px;
+}
+
+.stat-value {
+    font-weight: 700;
+    color: #f3f4f6;
+}
+
 .search-suggestions {
     position: absolute;
     left: 0;
@@ -291,4 +340,13 @@ header {
     font-weight: 700;
     font-size: 0.9rem;
     text-decoration: none;
+}
+
+.featured-cards {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.featured-cards::-webkit-scrollbar {
+    display: none;
 }

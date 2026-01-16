@@ -82,6 +82,51 @@ function formatDate(ts){
     return new Date(ts*1000).toLocaleDateString(getLocale(), { year:'numeric', month:'short', day:'2-digit' });
 }
 
+function buildGenreStats(games = []) {
+    const map = new Map();
+    games.forEach((g) => {
+        (g.genres || []).forEach((genre) => {
+            const name = genre?.name;
+            if (!name) return;
+            map.set(name, (map.get(name) || 0) + 1);
+        });
+    });
+    return Array.from(map.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+}
+
+function buildPlatformStats(games = []) {
+    const map = new Map();
+    games.forEach((g) => {
+        (g.platforms || []).forEach((platform) => {
+            const name = platform?.name;
+            if (!name) return;
+            map.set(name, (map.get(name) || 0) + 1);
+        });
+    });
+    return Array.from(map.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+}
+
+function renderStatRows(stats, emptyLabel) {
+    if (!stats || stats.length === 0) {
+        return `<div class="list-placeholder text-gray-400">${emptyLabel}</div>`;
+    }
+    const maxValue = Math.max(...stats.map(s => s.value));
+    return stats.map((s) => {
+        const width = maxValue ? Math.round((s.value / maxValue) * 100) : 0;
+        return `
+          <div class="stat-row">
+            <div class="stat-label">${s.label}</div>
+            <div class="stat-bar"><span style="width:${width}%"></span></div>
+            <div class="stat-value">${s.value}</div>
+          </div>
+        `;
+    }).join('');
+}
+
 const FALLBACK_COMPANY = {
     name: 'Sample Studio',
     description: 'Descripción genérica del estudio. Sustituya con datos reales cuando el API no responda.',
@@ -122,6 +167,10 @@ function renderCompany(root, data){
     const toHost = (url = '') => {
         try { return new URL(url).hostname; } catch { return url.replace(/^https?:\/\//,''); }
     };
+
+    const genreStats = buildGenreStats(games).slice(0, 8);
+    const platformStats = buildPlatformStats(games).slice(0, 8);
+    const noData = tr('common.noData', 'Sin datos');
 
     root.innerHTML = `
         <div class="company-page space-y-8">
@@ -181,6 +230,20 @@ function renderCompany(root, data){
                 <div class="bg-panel border border-border rounded-2xl p-5 lg:col-span-2 space-y-3">
                     <h2 class="text-lg font-semibold text-gray-100">${tr('company.aboutUs', 'Quiénes somos')}</h2>
                     <div class="text-gray-300 leading-relaxed whitespace-pre-line">${data.description || tr('noDescription', 'Sin descripción')}</div>
+                </div>
+            </section>
+
+            <section class="stat-card space-y-3">
+                <h2 class="text-lg font-semibold text-gray-100">${tr('company.statsGenresTitle', 'Juegos por género')}</h2>
+                <div class="stat-list">
+                    ${renderStatRows(genreStats, noData)}
+                </div>
+            </section>
+
+            <section class="stat-card space-y-3">
+                <h2 class="text-lg font-semibold text-gray-100">${tr('company.statsPlatformsTitle', 'Juegos por plataforma')}</h2>
+                <div class="stat-list">
+                    ${renderStatRows(platformStats, noData)}
                 </div>
             </section>
 

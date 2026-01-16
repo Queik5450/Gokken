@@ -93,6 +93,7 @@
         abbreviation: 'Abreviatura',
         otherVersions: 'Otras versiones',
         featuredGames: 'Juegos Destacados',
+        statsYearsTitle: 'Juegos publicados por año',
         spec1: 'CPU y GPU personalizadas',
         spec2: 'Memoria GDDR6 de alta velocidad',
         spec3: 'Almacenamiento NVMe ultrarrápido',
@@ -117,7 +118,9 @@
         rating: 'Rating',
         sites: 'Sitios',
         aboutUs: 'Quiénes somos',
-        featuredGames: 'Juegos destacados'
+        featuredGames: 'Juegos destacados',
+        statsGenresTitle: 'Juegos por género',
+        statsPlatformsTitle: 'Juegos por plataforma'
       },
       noDescription: 'Sin descripción',
       releases: {
@@ -309,6 +312,7 @@
         abbreviation: 'Abbreviation',
         otherVersions: 'Other versions',
         featuredGames: 'Featured games',
+        statsYearsTitle: 'Games released per year',
         spec1: 'Custom CPU and GPU',
         spec2: 'High-speed GDDR6 memory',
         spec3: 'Ultra-fast NVMe storage',
@@ -333,7 +337,9 @@
         rating: 'Rating',
         sites: 'Sites',
         aboutUs: 'About us',
-        featuredGames: 'Featured games'
+        featuredGames: 'Featured games',
+        statsGenresTitle: 'Games by genre',
+        statsPlatformsTitle: 'Games by platform'
       },
       noDescription: 'No description',
       releases: {

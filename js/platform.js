@@ -119,7 +119,25 @@ function renderPlatform(root, data){
         return '#';
     };
 
-    root.innerHTML = `
+        const yearStats = Array.isArray(data.statsYears) ? data.statsYears : [];
+        const noData = tr('common.noData', 'Sin datos');
+
+        const renderStatRows = (stats) => {
+                if (!stats.length) return `<div class="list-placeholder text-gray-400">${noData}</div>`;
+                const maxValue = Math.max(...stats.map(s => s.value));
+                return stats.map((s) => {
+                        const width = maxValue ? Math.round((s.value / maxValue) * 100) : 0;
+                        return `
+                            <div class="stat-row">
+                                <div class="stat-label">${s.label}</div>
+                                <div class="stat-bar"><span style="width:${width}%"></span></div>
+                                <div class="stat-value">${s.value}</div>
+                            </div>
+                        `;
+                }).join('');
+        };
+
+        root.innerHTML = `
         <div class="space-y-10">
             <div class="text-center">
                 <h1 class="text-4xl font-black tracking-tight uppercase">${data.name || tr('search.platformDefault', 'Consola')}</h1>
@@ -181,6 +199,13 @@ function renderPlatform(root, data){
                 </div>
             </section>
 
+            <section class="stat-card space-y-3">
+                <h2 class="text-lg font-semibold text-gray-100">${tr('platform.statsYearsTitle', 'Juegos publicados por año')}</h2>
+                <div class="stat-list">
+                    ${renderStatRows(yearStats)}
+                </div>
+            </section>
+
             <section class="space-y-4">
                 <div class="flex items-center justify-between">
                     <h2 class="text-2xl font-black text-gray-100">${tr('platform.featuredGames', 'Juegos Destacados')}</h2>
@@ -224,8 +249,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     const data = await fetchPlatform(id, slug);
     let games = [];
+    let statsGames = [];
     if(data && (data.id || id)){
         games = await fetchPlatformGames(data.id || id, 8);
+        statsGames = await fetchPlatformGames(data.id || id, 50);
     }
-    renderPlatform(root, { ...data, featuredGames: games });
+
+    const yearMap = new Map();
+    statsGames.forEach((g) => {
+        if (!g.first_release_date) return;
+        const year = new Date(g.first_release_date * 1000).getFullYear();
+        if (!Number.isFinite(year)) return;
+        yearMap.set(year, (yearMap.get(year) || 0) + 1);
+    });
+    const statsYears = Array.from(yearMap.entries())
+        .map(([label, value]) => ({ label: String(label), value }))
+        .sort((a, b) => Number(b.label) - Number(a.label))
+        .slice(0, 8);
+
+    renderPlatform(root, { ...data, featuredGames: games, statsYears });
 });
