@@ -941,13 +941,14 @@ app.get('/api/game-events', async (req, res) => {
             const rg = ev.related_game || {};
             const title = (ev.name || '').toLowerCase();
             const desc = (ev.description || '').toLowerCase();
+            const rgName = (rg.name || '').toLowerCase();
             const matchId = target && rg.id && target.id && rg.id === target.id;
             if (matchId) return true;
             if (!keywords.length) return false;
-            return keywords.some(k => title.includes(k) || desc.includes(k));
+            return keywords.some(k => title.includes(k) || desc.includes(k) || rgName.includes(k));
         });
 
-        const pool = filtered.length ? filtered : enriched;
+        const pool = target ? filtered : (filtered.length ? filtered : enriched);
         const result = pool.slice(0, limit);
         res.json(result);
     } catch (error) {
