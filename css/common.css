@@ -70,6 +70,14 @@ header {
     color: #e5e7eb;
 }
 
+/* Ensure header controls remain above the expanded search on small screens */
+.nav-toggle,
+.site-nav,
+.lang-switch {
+    position: relative;
+    z-index: 70;
+}
+
 .mobile-nav {
     position: absolute;
     top: 100%;
@@ -108,8 +116,7 @@ header {
 
 .header-container:focus-within .logo,
 .header-container:focus-within .site-nav,
-.header-container:focus-within .lang-switch,
-.header-container:focus-within .nav-toggle {
+.header-container:focus-within .lang-switch {
     display: none;
 }
 
