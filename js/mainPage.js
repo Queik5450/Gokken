@@ -167,7 +167,9 @@ async function fetchPlatforms(){
     try{
         const res = await fetch(url);
         if(!res.ok) throw new Error(res.statusText);
-        return await res.json();
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+        return list.length ? list : FALLBACK_PLATFORMS;
     }catch(e){
         console.error('Fetch platforms error', e);
         return FALLBACK_PLATFORMS;

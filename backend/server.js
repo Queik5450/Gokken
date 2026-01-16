@@ -445,17 +445,56 @@ app.get('/api/platforms', async (req, res) => {
     if (cached) return res.json(cached);
 
     try {
-        const platforms = await igdbQuery('platforms', `
+        let platforms = await igdbQuery('platforms', `
             fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
             where platform_logo != null & category = (1,5);
             sort generation desc;
             limit ${limit};
         `);
 
+        if (!Array.isArray(platforms) || platforms.length === 0) {
+            platforms = await igdbQuery('platforms', `
+                fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
+                where category = (1,5);
+                sort generation desc;
+                limit ${limit};
+            `);
+        }
+
         cacheSet(cacheKey, platforms, 15 * 60 * 1000);
-        res.json(platforms);
+        res.json(platforms || []);
     } catch (error) {
         console.error('Platforms failed', error?.response?.data || error.message || error);
+        if (cached) return res.json(cached);
+        res.status(500).json({ error: 'Failed to fetch platforms' });
+    }
+});
+
+app.get('/api/platforms/all', async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+    const page = Math.max(Number(req.query.page || 1), 1);
+    const cacheKey = `platforms-all:${page}:${limit}`;
+    const cached = cacheGetWithStale(cacheKey, 60 * 60 * 1000);
+    if (cached) return res.json(cached);
+
+    try {
+        const offset = (page - 1) * limit;
+        const platforms = await igdbQuery('platforms', `
+            fields id, name, slug, abbreviation, generation, category, platform_logo.image_id, platform_family.name;
+            where category = (1,5);
+            sort name asc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = Array.isArray(platforms) && platforms.length > limit;
+        const pageItems = hasMore ? platforms.slice(0, limit) : (platforms || []);
+
+        const payload = { items: pageItems, hasMore, page, limit };
+        cacheSet(cacheKey, payload, 15 * 60 * 1000);
+        res.json(payload);
+    } catch (error) {
+        console.error('Platforms-all failed', error?.response?.data || error.message || error);
         if (cached) return res.json(cached);
         res.status(500).json({ error: 'Failed to fetch platforms' });
     }

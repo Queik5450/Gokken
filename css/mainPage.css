@@ -304,7 +304,11 @@
     padding: 20px 0;
     width: 100%;
     justify-content: space-around;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
+
+.platforms-list::-webkit-scrollbar { display: none; }
 
 .platform-item {
     display: flex;
