@@ -905,7 +905,7 @@ app.get('/api/game-events', async (req, res) => {
         const lang = resolveLang(req);
 
         const targetGames = await igdbQuery('games', `
-            fields id, name, slug;
+            fields id, name, slug, collection.name, franchises.name;
             search "${gameName.replace(/"/g, '\"')}";
             limit 1;
         `);
@@ -925,14 +925,26 @@ app.get('/api/game-events', async (req, res) => {
 
         const enriched = await attachGameMatch(normalized);
 
-        const needle = (target?.name || gameName).toLowerCase();
+        const keywords = (() => {
+            const list = [gameName];
+            if (target?.name) list.push(target.name);
+            if (target?.collection?.name) list.push(target.collection.name);
+            if (Array.isArray(target?.franchises)) {
+                target.franchises.forEach(f => { if (f?.name) list.push(f.name); });
+            }
+            return list
+                .map(s => String(s || '').trim().toLowerCase())
+                .filter(Boolean);
+        })();
+
         const filtered = enriched.filter(ev => {
             const rg = ev.related_game || {};
-            const matchId = target && rg.id && target.id && rg.id === target.id;
-            const rgName = (rg.name || '').toLowerCase();
             const title = (ev.name || '').toLowerCase();
             const desc = (ev.description || '').toLowerCase();
-            return matchId || rgName.includes(needle) || title.includes(needle) || desc.includes(needle);
+            const matchId = target && rg.id && target.id && rg.id === target.id;
+            if (matchId) return true;
+            if (!keywords.length) return false;
+            return keywords.some(k => title.includes(k) || desc.includes(k));
         });
 
         const pool = filtered.length ? filtered : enriched;
