@@ -10,7 +10,6 @@ const Parser = require('rss-parser');
 const app = express();
 app.use(cors());
 
-// Simple in-memory cache to reduce calls to IGDB/RSS and avoid 429 rate limiting.
 const memoryCache = new Map();
 
 function cacheGetWithStale(key, maxStaleMs = 0) {
@@ -411,7 +410,6 @@ app.get('/api/companies', async (req, res) => {
                     });
                 });
             } catch (e) {
-                // If IGDB rate-limits, still return companies (without ratings) quickly.
                 console.warn('Companies rating enrichment skipped', e?.response?.data || e.message || e);
             }
         }
@@ -906,7 +904,6 @@ app.get('/api/game-events', async (req, res) => {
         if (!gameName) return res.status(400).json({ error: 'Missing game name' });
         const lang = resolveLang(req);
 
-        // Resolve the target game once to use its id/name for filtering.
         const targetGames = await igdbQuery('games', `
             fields id, name, slug;
             search "${gameName.replace(/"/g, '\"')}";
@@ -953,7 +950,6 @@ app.get('/api/news', async (req, res) => {
         const limit = Math.min(Math.max(Number(req.query.limit || 10), 1), 50);
         const lang = normalizeNewsLang(req.query.lang);
 
-        // Prefer real news via RSS.
         const rssItems = await fetchRssNews(limit, lang);
         if (rssItems && rssItems.length) {
             const translated = await Promise.all(rssItems.map(async (item) => ({
@@ -963,7 +959,6 @@ app.get('/api/news', async (req, res) => {
             return res.json(translated);
         }
 
-        // Fallback to English RSS if Spanish feeds fail/are rate-limited.
         if (lang !== 'en') {
             const enItems = await fetchRssNews(limit, 'en');
             if (enItems && enItems.length) {
@@ -975,8 +970,6 @@ app.get('/api/news', async (req, res) => {
             }
         }
 
-        // IGDB's historical "pulses" endpoint is not available for many accounts (404).
-        // Provide a stable "news" feed by using recently updated games.
         const games = await igdbQuery('games', `
             fields id, name, summary, updated_at, cover.image_id, url;
             where summary != null & cover != null;

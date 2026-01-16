@@ -353,7 +353,6 @@
 .platform-meta { color: #f0f0f0; font-size: 0.85rem; opacity: 0.9; }
 .platform-placeholder { color: #888; font-size: 0.95rem; }
 
-/* Events */
 .events-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

@@ -631,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const eventsSection = document.querySelector('.events');
         if(!grid) return;
 
-        // Load progressively: render events ASAP, then merge news when it arrives.
         const eventsPromise = fetchEvents();
         const newsPromise = withTimeout(fetchNews(), 4500, []);
 
