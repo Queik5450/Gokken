@@ -85,6 +85,30 @@ async function fetchGamesByPlatform(id, page){
     return await res.json();
 }
 
+async function fetchGamesByMode(id, page){
+    const base = apiBase();
+    const url = `${base}/api/games/by-mode?id=${encodeURIComponent(id)}&limit=30&page=${encodeURIComponent(page||1)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+}
+
+async function fetchGamesByCollection(id, page){
+    const base = apiBase();
+    const url = `${base}/api/games/by-collection?id=${encodeURIComponent(id)}&limit=30&page=${encodeURIComponent(page||1)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+}
+
+async function fetchGamesByFranchise(id, page){
+    const base = apiBase();
+    const url = `${base}/api/games/by-franchise?id=${encodeURIComponent(id)}&limit=30&page=${encodeURIComponent(page||1)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+}
+
 function renderSection(list, empty, items, builder){
     if(!list || !empty) return;
     list.innerHTML = '';
@@ -163,8 +187,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const q = qs('q') || '';
     const genreId = qs('genreId');
     const platformId = qs('platformId');
+    const modeId = qs('modeId');
+    const collectionId = qs('collectionId');
+    const franchiseId = qs('franchiseId');
     const genreName = qs('genreName');
     const platformName = qs('platformName');
+    const modeName = qs('modeName');
+    const collectionName = qs('collectionName');
+    const franchiseName = qs('franchiseName');
     const pageParam = Number(qs('page') || '1') || 1;
     const gamesList = document.getElementById('resultsListGames');
     const gamesEmpty = document.getElementById('resultsEmptyGames');
@@ -179,13 +209,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(section) section.style.display = 'none';
     };
 
-    if(genreId || platformId){
+    if(genreId || platformId || modeId || collectionId || franchiseId){
         hideSection(companiesList);
         hideSection(companiesEmpty);
         hideSection(platformsList);
         hideSection(platformsEmpty);
         try{
-            const resp = genreId ? await fetchGamesByGenre(genreId, pageParam) : await fetchGamesByPlatform(platformId, pageParam);
+            const resp = genreId
+              ? await fetchGamesByGenre(genreId, pageParam)
+              : platformId
+                ? await fetchGamesByPlatform(platformId, pageParam)
+                : modeId
+                  ? await fetchGamesByMode(modeId, pageParam)
+                  : collectionId
+                    ? await fetchGamesByCollection(collectionId, pageParam)
+                    : await fetchGamesByFranchise(franchiseId, pageParam);
             const games = resp.items || resp;
             const hasMore = typeof resp.hasMore === 'boolean' ? resp.hasMore : (Array.isArray(games) ? games.length >= 30 : false);
             if(summary){
@@ -196,12 +234,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }else{
                         summary.textContent = `${games.length} juegos en el género "${genreName || ''}" (página ${page})`.trim();
                     }
-                }else{
+                }else if(platformId){
                     const page = resp.page || pageParam;
                     if((window.__GOKKEN_LANG__ || 'es') === 'en'){
                         summary.textContent = `${games.length} games on platform "${platformName || ''}" (page ${page})`.trim();
                     }else{
                         summary.textContent = `${games.length} juegos en la plataforma "${platformName || ''}" (página ${page})`.trim();
+                    }
+                }else if(modeId){
+                    const page = resp.page || pageParam;
+                    if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                        summary.textContent = `${games.length} games with mode "${modeName || ''}" (page ${page})`.trim();
+                    }else{
+                        summary.textContent = `${games.length} juegos con modo "${modeName || ''}" (página ${page})`.trim();
+                    }
+                }else if(collectionId){
+                    const page = resp.page || pageParam;
+                    if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                        summary.textContent = `${games.length} games in collection "${collectionName || ''}" (page ${page})`.trim();
+                    }else{
+                        summary.textContent = `${games.length} juegos en la colección "${collectionName || ''}" (página ${page})`.trim();
+                    }
+                }else{
+                    const page = resp.page || pageParam;
+                    if((window.__GOKKEN_LANG__ || 'es') === 'en'){
+                        summary.textContent = `${games.length} games in franchise "${franchiseName || ''}" (page ${page})`.trim();
+                    }else{
+                        summary.textContent = `${games.length} juegos en la franquicia "${franchiseName || ''}" (página ${page})`.trim();
                     }
                 }
             }
@@ -238,11 +297,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if((window.__GOKKEN_LANG__ || 'es') === 'en'){
                     summary.textContent = genreId
                         ? `0 games in genre "${genreName || ''}"`
-                        : `0 games on platform "${platformName || ''}"`;
+                        : platformId
+                            ? `0 games on platform "${platformName || ''}"`
+                            : modeId
+                                ? `0 games with mode "${modeName || ''}"`
+                                : collectionId
+                                    ? `0 games in collection "${collectionName || ''}"`
+                                    : `0 games in franchise "${franchiseName || ''}"`;
                 }else{
                     summary.textContent = genreId
                         ? `0 juegos en el género "${genreName || ''}"`
-                        : `0 juegos en la plataforma "${platformName || ''}"`;
+                        : platformId
+                            ? `0 juegos en la plataforma "${platformName || ''}"`
+                            : modeId
+                                ? `0 juegos con modo "${modeName || ''}"`
+                                : collectionId
+                                    ? `0 juegos en la colección "${collectionName || ''}"`
+                                    : `0 juegos en la franquicia "${franchiseName || ''}"`;
                 }
             }
             renderSection(gamesList, gamesEmpty, [], buildGameRow);

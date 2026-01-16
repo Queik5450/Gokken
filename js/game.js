@@ -280,14 +280,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ratingColor = rating100 >= 75 ? '#00b374' : rating100 >= 50 ? '#e2b500' : '#e63b3b';
   const companies = (game.involved_companies||[]).map(ic=>ic.company?.name).filter(Boolean);
   const genres = (game.genres||[]).map(g=>({ id:g.id, name:g.name })).filter(g=>g.name);
-  const gameModes = (game.game_modes||[]).map(m=>m.name).filter(Boolean);
-  const seriesNames = (()=>{
-    const names = [];
-    if(game.collection?.name) names.push(game.collection.name);
-    if(Array.isArray(game.franchises)){
-      game.franchises.forEach(f=>{ if(f?.name) names.push(f.name); });
+  const gameModes = (game.game_modes||[]).map(m=>({ id:m.id, name:m.name })).filter(m=>m.name);
+  const seriesItems = (()=>{
+    const items = [];
+    if(game.collection?.name){
+      items.push({ type:'collection', id: game.collection.id, name: game.collection.name });
     }
-    return Array.from(new Set(names));
+    if(Array.isArray(game.franchises)){
+      game.franchises.forEach(f=>{
+        if(f?.name){
+          items.push({ type:'franchise', id: f.id, name: f.name });
+        }
+      });
+    }
+    // dedupe by type+id or name fallback
+    const seen = new Set();
+    return items.filter(item => {
+      const key = item.id ? `${item.type}:${item.id}` : `${item.type}:${item.name}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   })();
   const platforms = (game.platforms||[]).map(p=>({ id:p.id, name:p.name })).filter(p=>p.name);
   const themes = (game.themes||[]).map(t=>t.name).filter(Boolean);
@@ -363,13 +376,20 @@ document.addEventListener('DOMContentLoaded', async () => {
               </div>
               <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
                 <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelGameModes}</div>
-                <div class="pill-row flex flex-wrap gap-2">${gameModes.map(mode=>`<span class="pill inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm">${mode}</span>`).join('') || `<span class="pill">${nd}</span>`}</div>
+                <div class="pill-row flex flex-wrap gap-2">${gameModes.map(mode=>{
+                  const query = mode.id ? `modeId=${mode.id}&modeName=${encodeURIComponent(mode.name)}` : `q=${encodeURIComponent(mode.name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${mode.name}</a>`;
+                }).join('') || `<span class="pill">${nd}</span>`}</div>
               </div>
               <div class="bg-panel border border-border rounded-lg p-3 space-y-2">
                 <div class="stat-label text-xs uppercase tracking-wide text-gray-400">${labelSeries}</div>
-                <div class="pill-row flex flex-wrap gap-2">${seriesNames.map(name=>{
-                  const query = `q=${encodeURIComponent(name)}`;
-                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${name}</a>`;
+                <div class="pill-row flex flex-wrap gap-2">${seriesItems.map(item=>{
+                  const query = item.type === 'collection' && item.id
+                    ? `collectionId=${item.id}&collectionName=${encodeURIComponent(item.name)}`
+                    : item.type === 'franchise' && item.id
+                      ? `franchiseId=${item.id}&franchiseName=${encodeURIComponent(item.name)}`
+                      : `q=${encodeURIComponent(item.name)}`;
+                  return `<a class="pill pill-link inline-block bg-surface border border-border rounded-full px-3 py-1 text-sm hover:border-primary transition" href="results.html?${query}">${item.name}</a>`;
                 }).join('') || `<span class="pill">${nd}</span>`}</div>
               </div>
               <div class="bg-panel border border-border rounded-lg p-3 space-y-2">

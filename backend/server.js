@@ -789,6 +789,81 @@ app.get('/api/games/by-platform', async (req, res) => {
     }
 });
 
+app.get('/api/games/by-mode', async (req, res) => {
+    try {
+        const modeId = req.query.id ? Number(req.query.id) : null;
+        const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+        const page = Math.max(Number(req.query.page || 1), 1);
+        if (!modeId) return res.status(400).json({ error: 'Missing mode id' });
+
+        const offset = (page - 1) * limit;
+        const games = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, first_release_date, game_modes;
+            where game_modes = (${modeId}) & cover != null;
+            sort rating desc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = games.length > limit;
+        const items = hasMore ? games.slice(0, limit) : games;
+        res.json({ items, hasMore, page, limit });
+    } catch (error) {
+        console.error('Games by mode failed', error?.response?.data || error.message || error);
+        res.status(200).json({ items: [], hasMore: false, page: Number(req.query.page || 1) || 1, limit: Number(req.query.limit || 30) });
+    }
+});
+
+app.get('/api/games/by-collection', async (req, res) => {
+    try {
+        const collectionId = req.query.id ? Number(req.query.id) : null;
+        const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+        const page = Math.max(Number(req.query.page || 1), 1);
+        if (!collectionId) return res.status(400).json({ error: 'Missing collection id' });
+
+        const offset = (page - 1) * limit;
+        const games = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, first_release_date, collection;
+            where collection = ${collectionId} & cover != null;
+            sort rating desc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = games.length > limit;
+        const items = hasMore ? games.slice(0, limit) : games;
+        res.json({ items, hasMore, page, limit });
+    } catch (error) {
+        console.error('Games by collection failed', error?.response?.data || error.message || error);
+        res.status(200).json({ items: [], hasMore: false, page: Number(req.query.page || 1) || 1, limit: Number(req.query.limit || 30) });
+    }
+});
+
+app.get('/api/games/by-franchise', async (req, res) => {
+    try {
+        const franchiseId = req.query.id ? Number(req.query.id) : null;
+        const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 50);
+        const page = Math.max(Number(req.query.page || 1), 1);
+        if (!franchiseId) return res.status(400).json({ error: 'Missing franchise id' });
+
+        const offset = (page - 1) * limit;
+        const games = await igdbQuery('games', `
+            fields id, name, slug, cover.image_id, rating, first_release_date, franchises;
+            where franchises = (${franchiseId}) & cover != null;
+            sort rating desc;
+            limit ${limit + 1};
+            offset ${offset};
+        `);
+
+        const hasMore = games.length > limit;
+        const items = hasMore ? games.slice(0, limit) : games;
+        res.json({ items, hasMore, page, limit });
+    } catch (error) {
+        console.error('Games by franchise failed', error?.response?.data || error.message || error);
+        res.status(200).json({ items: [], hasMore: false, page: Number(req.query.page || 1) || 1, limit: Number(req.query.limit || 30) });
+    }
+});
+
 app.get('/api/events', async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit || 12), 1), 50);
     const lang = resolveLang(req);
